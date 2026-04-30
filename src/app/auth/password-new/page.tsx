@@ -107,10 +107,10 @@ export default function Page() {
             <Box className="flex flex-col gap-10">
               <Box className="flex flex-col">
                 <Typography variant="h1" component="h1" className="mb-2">
-                  Reset Password
+                  Setup New Password
                 </Typography>
                 <Typography variant="body1" className="text-text-primary">
-                  Get an email about how to reset your password securely.
+                  Set a new password to regain secure access to your account.
                 </Typography>
               </Box>
 
@@ -154,7 +154,7 @@ export default function Page() {
                         )}
                       </span>
                       <span className={cn("inline font-semibold", isPasswordLengthValid() && "text-success")}>
-                        at least 8 characters long,{" "}
+                        the same with the password above{" "}
                       </span>
                       <span className="inline">must contain</span>
                       <span
@@ -187,6 +187,72 @@ export default function Page() {
                     </Typography>
                   </FormControl>
 
+                  {/* ..................CONFIRM PASSWORD.................. */}
+
+                  <FormControl className="outlined" variant="standard" size="small">
+                    <FormLabel component="label" className="flex flex-row">
+                      Confirm Password{" "}
+                      {formik.touched.password && formik.errors.password && (
+                        <InputErrorTooltip title={formik.errors.password} />
+                      )}
+                    </FormLabel>
+                    <Input
+                      id="password"
+                      name="password"
+                      placeholder=""
+                      autoComplete="off"
+                      value={formik.values.password}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    />
+                    <Typography variant="body2" className="text-text-secondary mt-2 inline-block align-middle">
+                      <span className="inline">Must be the same with the above password.</span>
+                      {/* <span
+                        className={cn(
+                          "mx-1 inline-block h-4 w-4 rounded-md align-text-bottom",
+                          isPasswordLengthValid() ? "bg-success text-text-contrast" : "bg-grey-100 text-text-secondary",
+                        )}
+                      >
+                        {isPasswordLengthValid() ? (
+                          <NiCheck size={"tiny"}></NiCheck>
+                        ) : (
+                          <NiCross size={"tiny"}></NiCross>
+                        )}
+                      </span>
+                      <span className={cn("inline font-semibold", isPasswordLengthValid() && "text-success")}>
+                        at least 8 characters long,{" "}
+                      </span>
+                      <span className="inline">must contain</span>
+                      <span
+                        className={cn(
+                          "mx-1 inline-block h-4 w-4 rounded-md align-text-bottom",
+                          isPasswordCaseValid() ? "bg-success text-text-contrast" : "bg-grey-100 text-text-secondary",
+                        )}
+                      >
+                        {isPasswordCaseValid() ? <NiCheck size={"tiny"}></NiCheck> : <NiCross size={"tiny"}></NiCross>}
+                      </span>
+                      <span className={cn("inline font-semibold", isPasswordCaseValid() && "text-success")}>
+                        lowercase and uppercase letters,{" "}
+                      </span>
+                      <span className="inline">must have at least</span>
+                      <span
+                        className={cn(
+                          "mx-1 inline-block h-4 w-4 rounded-md align-text-bottom",
+                          isPasswordSymbolValid() ? "bg-success text-text-contrast" : "bg-grey-100 text-text-secondary",
+                        )}
+                      >
+                        {isPasswordSymbolValid() ? (
+                          <NiCheck size={"tiny"}></NiCheck>
+                        ) : (
+                          <NiCross size={"tiny"}></NiCross>
+                        )}
+                      </span>
+                      <span className={cn("inline font-semibold", isPasswordSymbolValid() && "text-success")}>
+                        one special character.
+                      </span> */}
+                    </Typography>
+                  </FormControl>
+
                   {submitted && !formik.isValid && (
                     <Alert severity="error" icon={<NiCrossSquare />} className="neutral bg-background-paper/60! mb-4">
                       <AlertTitle variant="subtitle2">The following inputs have errors!</AlertTitle>
@@ -212,7 +278,7 @@ export default function Page() {
                   </Box>
 
                   <Typography variant="body2" className="text-text-secondary">
-                    By clicking Continue, Sign in with Google, or Sign in with GitHub, you agree to the{" "}
+                    By clicking Continue, you agree to the{" "}
                     <Link
                       target="_blank"
                       href="/auth/terms-and-conditions"

@@ -30,7 +30,7 @@ const urbanist = Urbanist({
 });
 
 export const metadata: Metadata = {
-  title: "Gogo",
+  title: "Usus",
   description: "Gogo Next React Typescript MUI Tailwind Admin Template",
   icons: {
     icon: [

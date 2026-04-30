@@ -84,7 +84,7 @@ export default function Page() {
                   </Box>
 
                   <Typography variant="body2" className="text-text-secondary">
-                    By clicking Continue, Sign in with Google, or Sign in with GitHub, you agree to the{" "}
+                    By clicking Continue, you agree to the{" "}
                     <Link
                       target="_blank"
                       href="/auth/terms-and-conditions"

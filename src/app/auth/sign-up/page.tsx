@@ -28,9 +28,7 @@ import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import { cn } from "@/lib/utils";
 
 const validationSchema = yup.object({
-  name: yup.string().required("The field is required").min(3, "Should be at least 3 characters"),
   email: yup.string().required("The field is required").email("Enter a valid email"),
-  company: yup.string().required("The field is required").min(3, "Should be at least 3 characters"),
   password: yup
     .string()
     .required("The field is required")
@@ -44,6 +42,10 @@ const validationSchema = yup.object({
       const hasSymbol = /[^A-Za-z 0-9]/g.test(value);
       return hasSymbol;
     }),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match")
+    .required("Confirm your password"),
 });
 
 type InputErrorProps = {
@@ -71,10 +73,9 @@ export default function Page() {
 
   const formik = useFormik({
     initialValues: {
-      name: "",
       email: "",
-      company: "",
       password: "",
+      confirmPassword: "",
     },
     validationSchema,
     onSubmit: (values) => {
@@ -100,6 +101,10 @@ export default function Page() {
     return hasSymbol;
   };
 
+  const isConfirmPasswordValid = () => {
+    return formik.values.confirmPassword.length && formik.values.password === formik.values.confirmPassword;
+  };
+
   const googleSVG = () => {
     return (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -118,19 +123,6 @@ export default function Page() {
         <path
           d="M10.4346 4.31358C11.8433 4.31358 13.0955 4.80054 14.0955 5.73967L16.8346 3.00054C15.1738 1.45271 13.0172 0.504883 10.4346 0.504883C6.69551 0.504883 3.46942 2.65271 1.89551 5.78314L5.07812 8.25271C5.83464 5.99184 7.94768 4.31358 10.4346 4.31358Z"
           fill="#EA4335"
-        />
-      </svg>
-    );
-  };
-
-  const githubSVG = () => {
-    return (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M10 0.0693359C4.475 0.0693359 0 4.54434 0 10.0693C0 14.4943 2.8625 18.2318 6.8375 19.5568C7.3375 19.6443 7.525 19.3443 7.525 19.0818C7.525 18.8443 7.5125 18.0568 7.5125 17.2193C5 17.6818 4.35 16.6068 4.15 16.0443C4.0375 15.7568 3.55 14.8693 3.125 14.6318C2.775 14.4443 2.275 13.9818 3.1125 13.9693C3.9 13.9568 4.4625 14.6943 4.65 14.9943C5.55 16.5068 6.9875 16.0818 7.5625 15.8193C7.65 15.1693 7.9125 14.7318 8.2 14.4818C5.975 14.2318 3.65 13.3693 3.65 9.54434C3.65 8.45684 4.0375 7.55684 4.675 6.85684C4.575 6.60684 4.225 5.58184 4.775 4.20684C4.775 4.20684 5.6125 3.94434 7.525 5.23184C8.325 5.00684 9.175 4.89434 10.025 4.89434C10.875 4.89434 11.725 5.00684 12.525 5.23184C14.4375 3.93184 15.275 4.20684 15.275 4.20684C15.825 5.58184 15.475 6.60684 15.375 6.85684C16.0125 7.55684 16.4 8.44434 16.4 9.54434C16.4 13.3818 14.0625 14.2318 11.8375 14.4818C12.2 14.7943 12.5125 15.3943 12.5125 16.3318C12.5125 17.6693 12.5 18.7443 12.5 19.0818C12.5 19.3443 12.6875 19.6568 13.1875 19.5568C17.1375 18.2318 20 14.4818 20 10.0693C20 4.54434 15.525 0.0693359 10 0.0693359Z"
-          fill="#1B1F23"
         />
       </svg>
     );
@@ -161,7 +153,7 @@ export default function Page() {
                     <Box className="me-2">{googleSVG()}</Box>Sign in with Google
                   </Button>
                   <Button variant="outlined" color="grey" className="flex-none md:w-1/2">
-                    <Box className="me-2">{githubSVG()}</Box>Sign in with Google
+                    <Box className="me-2"></Box>Sign in with SSO
                   </Button>
                 </Box>
 
@@ -177,46 +169,14 @@ export default function Page() {
                 >
                   <FormControl className="outlined" variant="standard" size="small">
                     <FormLabel component="label" className="flex flex-row">
-                      Name{" "}
-                      {formik.touched.name && formik.errors.name && <InputErrorTooltip title={formik.errors.name} />}
-                    </FormLabel>
-                    <Input
-                      id="name"
-                      name="name"
-                      placeholder=""
-                      value={formik.values.name}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                  </FormControl>
-
-                  <FormControl className="outlined" variant="standard" size="small">
-                    <FormLabel component="label" className="flex flex-row">
-                      Email{" "}
+                      Work Email{" "}
                       {formik.touched.email && formik.errors.email && <InputErrorTooltip title={formik.errors.email} />}
                     </FormLabel>
                     <Input
                       id="email"
                       name="email"
-                      placeholder=""
+                      placeholder="Enter company email"
                       value={formik.values.email}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                    />
-                  </FormControl>
-
-                  <FormControl className="outlined" variant="standard" size="small">
-                    <FormLabel component="label" className="flex flex-row">
-                      Company{" "}
-                      {formik.touched.company && formik.errors.company && (
-                        <InputErrorTooltip title={formik.errors.company} />
-                      )}
-                    </FormLabel>
-                    <Input
-                      id="company"
-                      name="company"
-                      placeholder=""
-                      value={formik.values.company}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                     />
@@ -232,7 +192,7 @@ export default function Page() {
                     <Input
                       id="password"
                       name="password"
-                      placeholder=""
+                      placeholder="Enter password"
                       autoComplete="off"
                       value={formik.values.password}
                       onChange={formik.handleChange}
@@ -285,9 +245,47 @@ export default function Page() {
                       </span>
                     </Typography>
                   </FormControl>
+
+                  {/* .....................PASSWORD CONFIRMATION BOX..................... */}
+
+                  <FormControl className="outlined" variant="standard" size="small">
+                    <FormLabel component="label" className="flex flex-row">
+                      Confirm Password{" "}
+                      {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+                        <InputErrorTooltip title={formik.errors.confirmPassword} />
+                      )}
+                    </FormLabel>
+
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      placeholder="Confirm password"
+                      autoComplete="off"
+                      value={formik.values.confirmPassword}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                    />
+
+                    {/* MATCH STATUS UI */}
+                    <Typography variant="body2" className="text-text-secondary mt-2 inline-block">
+                      <span>Passwords match</span>
+
+                      <span
+                        className={cn(
+                          "mx-1 inline-block h-4 w-4 rounded-md align-text-bottom",
+                          isConfirmPasswordValid()
+                            ? "bg-success text-text-contrast"
+                            : "bg-grey-100 text-text-secondary",
+                        )}
+                      >
+                        {isConfirmPasswordValid() ? <NiCheck size="tiny" /> : <NiCross size="tiny" />}
+                      </span>
+                    </Typography>
+                  </FormControl>
+
                   {submitted && !formik.isValid && (
                     <Alert severity="error" icon={<NiCrossSquare />} className="neutral bg-background-paper/60! mb-4">
-                      <AlertTitle variant="subtitle2">The following inputs have errors!</AlertTitle>
+                      <AlertTitle variant="subtitle2">Please fill all the required inputs!</AlertTitle>
                       {Object.entries(formik.errors).map(([key, value]) => {
                         return (
                           <Box className="flex flex-row gap-0.5" key={crypto.randomUUID()}>
@@ -303,19 +301,20 @@ export default function Page() {
                     </Alert>
                   )}
                   <Box className="flex flex-col gap-2">
+                    <Button type="submit" variant="contained">
+                      Create WorkSpace
+                    </Button>
+
                     <Link
                       href="/auth/password-reset"
-                      className="link-text-secondary link-underline-hover text-center text-sm font-semibold"
+                      className="link-text-secondary link-underline-hover mb-4 text-center text-sm font-semibold"
                     >
                       Reset Password
                     </Link>
-                    <Button type="submit" variant="contained" className="mb-4">
-                      Continue
-                    </Button>
                   </Box>
 
                   <Typography variant="body2" className="text-text-secondary">
-                    By clicking Continue, Sign in with Google, or Sign in with GitHub, you agree to the{" "}
+                    By clicking Create WorkSpace, you agree to the{" "}
                     <Link
                       target="_blank"
                       href="/auth/terms-and-conditions"

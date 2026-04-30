@@ -25,6 +25,8 @@ export default function Page() {
         <Box className="flex flex-col gap-4 px-8 sm:px-14">
           <Box className="flex flex-col">
             <Box className="mb-14 flex justify-center">
+              {/* ............REPLACE WITH USUS LOGO............ */}
+
               <Logo classNameMobile="hidden" />
             </Box>
 
@@ -56,7 +58,7 @@ export default function Page() {
                   </Box>
 
                   <Typography variant="body2" className="text-text-secondary">
-                    By clicking Continue, Sign in with Google, or Sign in with GitHub, you agree to the{" "}
+                    By clicking Continue, you agree to the{" "}
                     <Link
                       target="_blank"
                       href="/auth/terms-and-conditions"

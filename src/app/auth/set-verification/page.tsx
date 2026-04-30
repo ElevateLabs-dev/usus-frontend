@@ -83,7 +83,7 @@ export default function Page() {
                   </Box>
 
                   <Typography variant="body2" className="text-text-secondary">
-                    By clicking Continue, Sign in with Google, or Sign in with GitHub, you agree to the{" "}
+                    By clicking Continue, you agree to the{" "}
                     <Link
                       target="_blank"
                       href="/auth/terms-and-conditions"
@@ -105,7 +105,7 @@ export default function Page() {
                   Did not get the code?
                 </Typography>
                 <Typography variant="body1" className="text-text-secondary">
-                  If you have not received the code, please{" "}
+                  If you have not received the code, click{" "}
                   <Link href="/auth/get-verification" className="link-primary link-underline-hover">
                     resend
                   </Link>
