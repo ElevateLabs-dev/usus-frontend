@@ -60,6 +60,8 @@ export default function Logo({ classNameFull }: { classNameFull?: string }) {
         </defs>
       </svg> */}
 
+      <img src="../" alt="" />
+
       <svg
         className={cn("ml-1 h-3 w-full fill-current", classNameFull)}
         xmlns="http://www.w3.org/2000/svg"

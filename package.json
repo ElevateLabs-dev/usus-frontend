@@ -40,6 +40,7 @@
     "ds-markdown": "0.2.2",
     "eslint-config-next": "16.1.0",
     "formik": "2.4.6",
+    "framer-motion": "^12.40.0",
     "material-ui-popup-state": "5.3.6",
     "next": "16.1.6",
     "next-intl": "4.6.1",
