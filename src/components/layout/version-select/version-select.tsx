@@ -29,7 +29,7 @@ export default function VersionSelect({ className }: { className?: string }) {
           />
         }
       >
-        <Box className="w-full truncate text-clip">Next v7.6.0</Box>
+        <Box className="w-full truncate text-clip">USUS v1.0.0</Box>
       </Button>
       <Menu
         anchorEl={anchorEl as Element}
@@ -41,11 +41,8 @@ export default function VersionSelect({ className }: { className?: string }) {
         }}
       >
         <MenuItem onClick={handleClose} selected>
-          Next v7.6.0
+          USUS v1.0.0
         </MenuItem>
-        <MenuItem onClick={handleClose}>Next v7.5.0</MenuItem>
-        <MenuItem onClick={handleClose}>Next v7.4.0</MenuItem>
-        <MenuItem onClick={handleClose}>Next v7.3.0</MenuItem>
       </Menu>
     </>
   );

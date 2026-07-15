@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -16,9 +15,11 @@ import {
   Typography,
 } from "@mui/material";
 
+import ThemeImage from "@/components/theme-image/themeimage";
 import { DEFAULTS } from "@/config";
 import { RadiobuttonSmallChecked, RadiobuttonSmallEmptyOutlined } from "@/icons/form/mui-radiobutton";
-import logo from "@/images/usus-logo.png";
+import logoDark from "@/images/usus-logo-dark.png";
+import logoLight from "@/images/usus-logo-light.png";
 
 export default function Page() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function Page() {
           <Box className="flex flex-col gap-4 px-8 sm:px-14">
             <Box className="flex flex-col">
               <Box className="mb-14 flex justify-center">
-                <Image src={logo} alt="USUS Logo" width={100} height={100} placeholder="blur" blurDataURL="..." />
+                <ThemeImage lightSrc={logoDark} darkSrc={logoLight} alt="Usus-Logo" width={150} height={50} />{" "}
               </Box>
 
               <Box className="flex flex-col gap-10">

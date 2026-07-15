@@ -3,7 +3,9 @@ import React from "react";
 
 import { Box, Paper, Typography } from "@mui/material";
 
-import Logo from "@/components/logo/logo";
+import ThemeImage from "@/components/theme-image/themeimage";
+import logoDark from "@/images/usus-logo-dark.png";
+import logoLight from "@/images/usus-logo-light.png";
 
 export default function Page() {
   return (
@@ -12,7 +14,14 @@ export default function Page() {
         <Box className="flex flex-col gap-4 px-8 sm:px-14">
           <Box className="flex flex-col">
             <Box className="mb-14 flex justify-start">
-              <Logo classNameMobile="hidden" />
+              <ThemeImage
+                lightSrc={logoDark}
+                darkSrc={logoLight}
+                alt="Usus-Logo"
+                width={150}
+                height={50}
+                className="block md:hidden"
+              />
             </Box>
 
             <Box className="flex flex-col gap-10">

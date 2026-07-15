@@ -1,6 +1,5 @@
 "use client";
 import { useFormik } from "formik";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -23,12 +22,14 @@ import {
   Typography,
 } from "@mui/material";
 
+import ThemeImage from "@/components/theme-image/themeimage";
 // import Logo from "@/components/logo/logo";
 import { DEFAULTS } from "@/config";
 import NiCrossSquare from "@/icons/nexture/ni-cross-square";
 import NiEyeClose from "@/icons/nexture/ni-eye-close";
 import NiEyeOpen from "@/icons/nexture/ni-eye-open";
-import logo from "@/images/usus-logo.png";
+import logoDark from "@/images/usus-logo-dark.png";
+import logoLight from "@/images/usus-logo-light.png";
 
 const validationSchema = yup.object({
   email: yup.string().required("The field is required").email("Enter a valid email"),
@@ -114,7 +115,7 @@ export default function Page() {
           <Box className="flex flex-col gap-4 px-8 sm:px-14">
             <Box className="flex flex-col">
               <Box className="mb-14 flex justify-center">
-                <Image src={logo} alt="USUS Logo" width={100} height={100} placeholder="blur" blurDataURL="..." />
+                <ThemeImage lightSrc={logoDark} darkSrc={logoLight} alt="Usus-Logo" width={150} height={50} />
               </Box>
 
               <Box className="flex flex-col gap-10">

@@ -158,32 +158,11 @@ export default function LeftMenu() {
   }, [updateSelectedSecondaryItem]);
 
   return (
-    <nav className="bg-background-paper shadow-darker-xs fixed z-10 mt-20 flex h-[calc(100%-5rem)] flex-row rounded-e-4xl">
-      <Box
-        className={cn(
-          "flex h-full shrink-0 grow-0 flex-col items-center overflow-x-hidden py-2.5! transition-all duration-(--layout-duration)",
-        )}
-        style={{
-          ...(leftPrimaryCurrent !== MenuShowState.Hide && leftMenuWidth.primary > 0
-            ? { width: `${leftMenuWidth.primary}px` }
-            : { width: "0px" }),
-        }}
-      >
+    <>
+      <nav className="bg-background-paper shadow-darker-xs fixed z-10 mt-20 flex h-[calc(100%-5rem)] flex-row rounded-e-4xl">
         <Box
           className={cn(
-            leftMenuType === MenuType.SingleLayer &&
-              leftPrimaryCurrent !== MenuShowState.Hide &&
-              leftMenuWidth.primary > 0 &&
-              "overflow-y-scroll px-4 pt-2 pb-6",
-            "absolute flex h-full min-h-full shrink-0 grow-0 flex-col items-center gap-0.5 overflow-y-auto",
-            leftMenuType === MenuType.Minimal &&
-              leftPrimaryCurrent !== MenuShowState.Hide &&
-              leftMenuWidth.primary > 0 &&
-              "overflow-y-scroll ps-2",
-            leftMenuType === MenuType.Comfort &&
-              leftPrimaryCurrent !== MenuShowState.Hide &&
-              leftMenuWidth.primary > 0 &&
-              "overflow-y-scroll ps-2.5",
+            "flex h-full shrink-0 grow-0 flex-col items-center overflow-x-hidden py-2.5! transition-all duration-(--layout-duration)",
           )}
           style={{
             ...(leftPrimaryCurrent !== MenuShowState.Hide && leftMenuWidth.primary > 0
@@ -191,155 +170,182 @@ export default function LeftMenu() {
               : { width: "0px" }),
           }}
         >
-          {!temporaryShowPrimaryMenu &&
-          leftMenuType === MenuType.SingleLayer &&
-          (activeItem?.content || menuSelectedSecondaryItem?.content) ? (
-            <Box className="flex w-full flex-1 flex-col">
-              {(activeItem?.content || menuSelectedSecondaryItem?.content) &&
-                (activeItem?.content || menuSelectedSecondaryItem?.content)}
-            </Box>
-          ) : (
-            <>
-              <Box
-                className={cn("flex w-full flex-1 flex-col gap-0.5", leftMenuType === MenuType.SingleLayer && "gap-1")}
-              >
-                {leftMenuItems
-                  .filter((x) => !x.hideInMenu)
-                  .map((item) =>
-                    leftMenuType === MenuType.SingleLayer ? (
-                      <SecondaryItem
-                        className={cn(leftShowBackdrop && "z-20")}
-                        item={item}
-                        key={`left-menu-primary-item-${leftMenuType}-${item.id}`}
-                        indent={0}
-                        openedAccordions={openedAccordions}
-                        setOpenedAccordions={setOpenedAccordions}
-                        onSelect={(item) => {
-                          if (temporaryShowPrimaryMenu) {
-                            setTemporaryShowPrimaryMenu(false);
-                          }
-                          handleSelectPrimaryItem(item);
-                          setActiveItem(item);
-                        }}
-                      />
-                    ) : (
-                      <PrimaryItem
-                        className={cn(leftShowBackdrop && "z-20")}
-                        item={item}
-                        key={`left-menu-primary-item-${leftMenuType}-${item.id}`}
-                        onSelect={(item) => handleSelectPrimaryItem(item)}
-                        isActive={activeItem?.id === item.id}
-                        menuType={leftMenuType}
-                      />
-                    ),
-                  )}
+          <Box
+            className={cn(
+              leftMenuType === MenuType.SingleLayer &&
+                leftPrimaryCurrent !== MenuShowState.Hide &&
+                leftMenuWidth.primary > 0 &&
+                "overflow-y-scroll px-4 pt-2 pb-6",
+              "absolute flex h-full min-h-full shrink-0 grow-0 flex-col items-center gap-0.5 overflow-y-auto",
+              leftMenuType === MenuType.Minimal &&
+                leftPrimaryCurrent !== MenuShowState.Hide &&
+                leftMenuWidth.primary > 0 &&
+                "overflow-y-scroll ps-2",
+              leftMenuType === MenuType.Comfort &&
+                leftPrimaryCurrent !== MenuShowState.Hide &&
+                leftMenuWidth.primary > 0 &&
+                "overflow-y-scroll ps-2.5",
+            )}
+            style={{
+              ...(leftPrimaryCurrent !== MenuShowState.Hide && leftMenuWidth.primary > 0
+                ? { width: `${leftMenuWidth.primary}px` }
+                : { width: "0px" }),
+            }}
+          >
+            {!temporaryShowPrimaryMenu &&
+            leftMenuType === MenuType.SingleLayer &&
+            (activeItem?.content || menuSelectedSecondaryItem?.content) ? (
+              <Box className="flex w-full flex-1 flex-col">
+                {(activeItem?.content || menuSelectedSecondaryItem?.content) &&
+                  (activeItem?.content || menuSelectedSecondaryItem?.content)}
               </Box>
-              <Box className={cn("mb-5 flex w-full flex-col gap-0.5")}>
-                {leftMenuBottomItems
-                  .filter((x) => !x.hideInMenu)
-                  .map((item) =>
-                    leftMenuType === MenuType.SingleLayer ? (
-                      <SecondaryItem
-                        className={cn(leftShowBackdrop && "z-20")}
-                        item={item}
-                        key={`left-menu-bottom-item-${leftMenuType}-${item.id}`}
-                        indent={0}
-                        openedAccordions={openedAccordions}
-                        setOpenedAccordions={setOpenedAccordions}
-                        onSelect={(item) => handleSelectPrimaryItem(item)}
-                      />
-                    ) : (
-                      <PrimaryItem
-                        className={cn(leftShowBackdrop && "z-20")}
-                        item={item}
-                        key={`left-menu-bottom-item-${leftMenuType}-${item.id}`}
-                        onSelect={(item) => handleSelectPrimaryItem(item)}
-                        isActive={activeItem?.id === item.id}
-                        menuType={leftMenuType}
-                      />
-                    ),
-                  )}
-              </Box>
-            </>
-          )}
-        </Box>
-      </Box>
-      {(leftMenuType === MenuType.Comfort || leftMenuType === MenuType.Minimal) && (
-        <Box
-          className={cn(
-            "ltr:shadow-line-left rtl:shadow-line-right flex h-full shrink-0 grow-0 overflow-x-hidden transition-all duration-(--layout-duration)",
-            leftShowBackdrop && "z-20",
-          )}
-          style={{
-            width:
-              ((activeItem?.children && activeItem?.children.filter((x) => !x.hideInMenu).length > 0) ||
-                activeItem?.content) &&
-              leftSecondaryCurrent !== MenuShowState.Hide &&
-              leftMenuWidth.secondary > 0
-                ? `calc(${leftMenuWidth.secondary}px`
-                : 0,
-          }}
-        >
-          <Box className="h-full w-full">
-            <Paper elevation={0} className="h-full w-full rounded-4xl py-6">
-              <Box className="relative h-full w-full overflow-x-hidden">
+            ) : (
+              <>
                 <Box
-                  style={{ width: leftSecondaryDefaultWidth }}
-                  className={cn("absolute flex h-full min-h-full flex-col gap-2 overflow-y-scroll ps-5.5 pe-4 pt-2")}
-                >
-                  {!activeItem?.content && !menuSelectedSecondaryItem?.content && (
-                    <>
-                      {activeItem?.label && (
-                        <Typography variant="h6" className={"text-primary mb-4 px-2.5"}>
-                          {t(activeItem?.label)}
-                        </Typography>
-                      )}
-                      <Box className="flex h-full w-full flex-1 flex-col justify-between gap-2">
-                        <>
-                          <Box className="flex w-full flex-1 flex-col gap-1">
-                            {activeItem?.children &&
-                              activeItem?.children?.filter((x) => !x.hideInMenu).length > 0 &&
-                              activeItem?.children
-                                ?.filter((x) => !x.hideInMenu)
-                                .map((item) => (
-                                  <SecondaryItem
-                                    item={item}
-                                    key={`left-menu-secondary-item-${leftMenuType}-${activeItem.id}-${item.id}`}
-                                    indent={0}
-                                    openedAccordions={openedAccordions}
-                                    setOpenedAccordions={setOpenedAccordions}
-                                    onSelect={(item) => {
-                                      setMenuSelectedSecondaryItem(item);
-                                    }}
-                                  />
-                                ))}
-                          </Box>
-
-                          <Box
-                            component="a"
-                            href="#"
-                            className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2"
-                          >
-                            <IllustrationLaunch className="text-primary h-45 w-45 bg-cover bg-center" />
-                            <Typography variant="body1" className="px-4 text-center">
-                              {t("menu-cta-copy")}
-                            </Typography>
-                            <Box className="group-hover:bg-primary/10 text-primary rounded-md px-5 py-2 font-medium transition-colors">
-                              {t("menu-cta-button")}
-                            </Box>
-                          </Box>
-                        </>
-                      </Box>
-                    </>
+                  className={cn(
+                    "flex w-full flex-1 flex-col gap-0.5",
+                    leftMenuType === MenuType.SingleLayer && "gap-1",
                   )}
-                  {(activeItem?.content || menuSelectedSecondaryItem?.content) &&
-                    (activeItem?.content || menuSelectedSecondaryItem?.content)}
+                >
+                  {leftMenuItems
+                    .filter((x) => !x.hideInMenu)
+                    .map((item) =>
+                      leftMenuType === MenuType.SingleLayer ? (
+                        <SecondaryItem
+                          className={cn(leftShowBackdrop && "z-20")}
+                          item={item}
+                          key={`left-menu-primary-item-${leftMenuType}-${item.id}`}
+                          indent={0}
+                          openedAccordions={openedAccordions}
+                          setOpenedAccordions={setOpenedAccordions}
+                          onSelect={(item) => {
+                            if (temporaryShowPrimaryMenu) {
+                              setTemporaryShowPrimaryMenu(false);
+                            }
+                            handleSelectPrimaryItem(item);
+                            setActiveItem(item);
+                          }}
+                        />
+                      ) : (
+                        <PrimaryItem
+                          className={cn(leftShowBackdrop && "z-20")}
+                          item={item}
+                          key={`left-menu-primary-item-${leftMenuType}-${item.id}`}
+                          onSelect={(item) => handleSelectPrimaryItem(item)}
+                          isActive={activeItem?.id === item.id}
+                          menuType={leftMenuType}
+                        />
+                      ),
+                    )}
                 </Box>
-              </Box>
-            </Paper>
+                <Box className={cn("mb-5 flex w-full flex-col gap-0.5")}>
+                  {leftMenuBottomItems
+                    .filter((x) => !x.hideInMenu)
+                    .map((item) =>
+                      leftMenuType === MenuType.SingleLayer ? (
+                        <SecondaryItem
+                          className={cn(leftShowBackdrop && "z-20")}
+                          item={item}
+                          key={`left-menu-bottom-item-${leftMenuType}-${item.id}`}
+                          indent={0}
+                          openedAccordions={openedAccordions}
+                          setOpenedAccordions={setOpenedAccordions}
+                          onSelect={(item) => handleSelectPrimaryItem(item)}
+                        />
+                      ) : (
+                        <PrimaryItem
+                          className={cn(leftShowBackdrop && "z-20")}
+                          item={item}
+                          key={`left-menu-bottom-item-${leftMenuType}-${item.id}`}
+                          onSelect={(item) => handleSelectPrimaryItem(item)}
+                          isActive={activeItem?.id === item.id}
+                          menuType={leftMenuType}
+                        />
+                      ),
+                    )}
+                </Box>
+              </>
+            )}
           </Box>
         </Box>
-      )}
-    </nav>
+
+        {(leftMenuType === MenuType.Comfort || leftMenuType === MenuType.Minimal) && (
+          <Box
+            className={cn(
+              "ltr:shadow-line-left rtl:shadow-line-right flex h-full shrink-0 grow-0 overflow-x-hidden transition-all duration-(--layout-duration)",
+              leftShowBackdrop && "z-20",
+            )}
+            style={{
+              width:
+                ((activeItem?.children && activeItem?.children.filter((x) => !x.hideInMenu).length > 0) ||
+                  activeItem?.content) &&
+                leftSecondaryCurrent !== MenuShowState.Hide &&
+                leftMenuWidth.secondary > 0
+                  ? `calc(${leftMenuWidth.secondary}px`
+                  : 0,
+            }}
+          >
+            <Box className="h-full w-full">
+              <Paper elevation={0} className="h-full w-full rounded-4xl py-6">
+                <Box className="relative h-full w-full overflow-x-hidden">
+                  <Box
+                    style={{ width: leftSecondaryDefaultWidth }}
+                    className={cn("absolute flex h-full min-h-full flex-col gap-2 overflow-y-scroll ps-5.5 pe-4 pt-2")}
+                  >
+                    {!activeItem?.content && !menuSelectedSecondaryItem?.content && (
+                      <>
+                        {activeItem?.label && (
+                          <Typography variant="h6" className={"text-primary mb-4 px-2.5"}>
+                            {t(activeItem?.label)}
+                          </Typography>
+                        )}
+                        <Box className="flex h-full w-full flex-1 flex-col justify-between gap-2">
+                          <>
+                            <Box className="flex w-full flex-1 flex-col gap-1">
+                              {activeItem?.children &&
+                                activeItem?.children?.filter((x) => !x.hideInMenu).length > 0 &&
+                                activeItem?.children
+                                  ?.filter((x) => !x.hideInMenu)
+                                  .map((item) => (
+                                    <SecondaryItem
+                                      item={item}
+                                      key={`left-menu-secondary-item-${leftMenuType}-${activeItem.id}-${item.id}`}
+                                      indent={0}
+                                      openedAccordions={openedAccordions}
+                                      setOpenedAccordions={setOpenedAccordions}
+                                      onSelect={(item) => {
+                                        setMenuSelectedSecondaryItem(item);
+                                      }}
+                                    />
+                                  ))}
+                            </Box>
+
+                            <Box
+                              component="a"
+                              href="#"
+                              className="group flex w-full cursor-pointer flex-col items-center justify-center gap-2"
+                            >
+                              <IllustrationLaunch className="text-primary h-45 w-45 bg-cover bg-center" />
+                              <Typography variant="body1" className="px-4 text-center">
+                                {t("menu-cta-copy")}
+                              </Typography>
+                              <Box className="group-hover:bg-primary/10 text-primary rounded-md px-5 py-2 font-medium transition-colors">
+                                {t("menu-cta-button")}
+                              </Box>
+                            </Box>
+                          </>
+                        </Box>
+                      </>
+                    )}
+                    {(activeItem?.content || menuSelectedSecondaryItem?.content) &&
+                      (activeItem?.content || menuSelectedSecondaryItem?.content)}
+                  </Box>
+                </Box>
+              </Paper>
+            </Box>
+          </Box>
+        )}
+      </nav>
+    </>
   );
 }

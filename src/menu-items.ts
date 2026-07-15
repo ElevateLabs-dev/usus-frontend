@@ -19,18 +19,18 @@ export const leftMenuItems: MenuItem[] = [
     ],
   },
   {
-    id: "single-menu",
+    id: "scenerio",
     icon: "NiDocumentFull",
-    label: "menu-single-menu",
+    label: "menu-scenerio",
     color: "text-primary",
-    href: "/single-menu",
+    href: "/learning",
   },
   {
     id: "external-link",
     icon: "NiArrowUpRightSquare",
     label: "menu-external-link",
     color: "text-primary",
-    href: "http://themeforest.net/item/gogo-next/23160320",
+    href: "https://elevatelabs.dev",
     isExternalLink: true,
   },
 ];

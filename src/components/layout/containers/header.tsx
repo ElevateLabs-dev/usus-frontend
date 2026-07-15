@@ -12,9 +12,11 @@ import { useEffect, useState } from "react";
 import { Box, Button, Fade, useMediaQuery, useTheme } from "@mui/material";
 
 import { useLayoutContext } from "@/components/layout/layout-context";
-import Logo from "@/components/logo/logo";
+import ThemeImage from "@/components/theme-image/themeimage";
 import NiListSquare from "@/icons/nexture/ni-list-square";
 import NiMenuSplit from "@/icons/nexture/ni-menu-split";
+import logoDark from "@/images/usus-logo-dark.png";
+import logoLight from "@/images/usus-logo-light.png";
 import { cn } from "@/lib/utils";
 import { MenuShowState } from "@/types";
 
@@ -42,7 +44,14 @@ export default function Header() {
       >
         <Box className="flex h-full flex-row items-center">
           <Link href="/home/sub">
-            <Logo classNameFull="ms-2 hidden md:block" classNameMobile="ms-2 md:hidden" />
+            <ThemeImage
+              lightSrc={logoDark}
+              darkSrc={logoLight}
+              alt="Usus-Logo"
+              width={150}
+              height={50}
+              className="ms-2 hidden md:block"
+            />
           </Link>
         </Box>
       </Box>
@@ -80,7 +89,14 @@ export default function Header() {
         <Box className="flex h-full flex-1 flex-row items-center gap-4 md:gap-6">
           {/* Logo */}
           <Link href="/home/sub">
-            <Logo classNameFull="ms-2 hidden md:block" classNameMobile="ms-2 md:hidden" />
+            <ThemeImage
+              lightSrc={logoDark}
+              darkSrc={logoLight}
+              alt="Usus-Logo"
+              width={100}
+              height={50}
+              className="ms-2 hidden md:block"
+            />
           </Link>
 
           {/* Version select */}
