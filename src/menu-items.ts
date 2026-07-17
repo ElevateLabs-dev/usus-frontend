@@ -8,22 +8,13 @@ export const leftMenuItems: MenuItem[] = [
     description: "menu-home-description",
     color: "text-primary",
     href: "/home",
-    children: [
-      {
-        id: "home-sub",
-        icon: "NiChartPie",
-        label: "menu-home-sub",
-        href: "/home/sub",
-        description: "menu-home-sub-description",
-      },
-    ],
   },
   {
-    id: "scenerio",
+    id: "scenarios",
     icon: "NiDocumentFull",
-    label: "menu-scenerio",
+    label: "menu-scenarios",
     color: "text-primary",
-    href: "/learning",
+    href: "/scenarios",
   },
   {
     id: "external-link",
