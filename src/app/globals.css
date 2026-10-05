@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+/* =========================================================
+   USUS DESIGN TOKENS
+   ========================================================= */
+
+:root {
+  --usus-background: #f2f1ed;
+  --usus-surface: #faf9f5;
+  --usus-surface-soft: #f6f5f1;
+  --usus-muted: #e8e7e1;
+
+  --usus-text: #252624;
+  --usus-text-muted: #70716d;
+  --usus-text-soft: #92938e;
+
+  --usus-border: #d9d8d2;
+  --usus-border-soft: #e5e4de;
+
+  --usus-primary: #8fb83e;
+  --usus-primary-hover: #7fa637;
+  --usus-primary-soft: #e7eed5;
+
+  --usus-success: #8fb83e;
+  --usus-danger: #c95a3d;
+  --usus-warning: #c89432;
+
+  --usus-sidebar: #faf9f5;
+  --usus-sidebar-hover: #f2f1ed;
+  --usus-sidebar-active: #e7eed5;
+
+  --usus-header: #faf9f5;
+  --usus-header-border: #d9d8d2;
+
+  --usus-progress-track: #deddd7;
+
+  --usus-shadow:
+    0 1px 2px rgba(37, 38, 36, 0.04),
+    0 8px 24px rgba(37, 38, 36, 0.06);
+
+  --usus-radius: 14px;
+};
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+.dark {
+  --usus-background: #171817;
+  --usus-surface: #222321;
+  --usus-surface-soft: #292a27;
+  --usus-muted: #30312e;
+
+  --usus-text: #e8e7e1;
+  --usus-text-muted: #a7a8a2;
+  --usus-text-soft: #858680;
+
+  --usus-border: #3a3b38;
+  --usus-border-soft: #30312e;
+
+  --usus-primary: #8fb83e;
+  --usus-primary-hover: #9fc94b;
+  --usus-primary-soft: #354021;
+
+  --usus-success: #8fb83e;
+  --usus-danger: #d66a4c;
+  --usus-warning: #d2a44b;
+
+  --usus-sidebar: #1d1e1c;
+  --usus-sidebar-hover: #292a27;
+  --usus-sidebar-active: #354021;
+
+  --usus-header: #171817;
+  --usus-header-border: #30312e;
+
+  --usus-progress-track: #353633;
+
+  --usus-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+};
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background: var(--usus-background);
+}
+
+body {
+  margin: 0;
+  background: var(--usus-background);
+  color: var(--usus-text);
+
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+/* =========================================================
+   SHARED INTERACTION
+   ========================================================= */
+
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+a[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   LOGOS
+   ========================================================= */
+
+.usus-logo-light {
+  display: block;
+}
+
+.usus-logo-dark {
+  display: none;
+}
+
+.dark .usus-logo-light {
+  display: none;
+}
+
+.dark .usus-logo-dark {
+  display: block;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--usus-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--usus-border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--usus-text-soft);
+}
+
+/* =========================================================
+   SELECTION
+   ========================================================= */
+
+::selection {
+  background: var(--usus-primary);
+  color: #111111;
+}
+/* =========================================================
+   MOBILE RESPONSIVENESS
+   ========================================================= */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+  /* Keep interactive content clear of the fixed bottom navigation. */
+  body {
+    padding-bottom: 0;
+  }
+
+  /* Prevent long words, IDs, and URLs from creating horizontal overflow. */
+  h1, h2, h3, h4, h5, h6, p, span, a, button {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* =========================================================
+   THEME TRANSITION
+   ========================================================= */
+
+.usus-theme-transition,
+.usus-theme-transition *,
+.usus-theme-transition *::before,
+.usus-theme-transition *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    fill 220ms ease,
+    stroke 220ms ease,
+    box-shadow 220ms ease !important;
+}
+
+
