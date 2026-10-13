@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+/*
+ * Where the FastAPI backend lives.
+ *
+ * Set BACKEND_URL in .env.local (or the hosting
+ * platform), for example:
+ * https://usus-api-utc7.onrender.com/api/v1
+ */
 const BACKEND_URL =
+  process.env.BACKEND_URL ??
   "http://127.0.0.1:8000/api/v1";
 
 async function proxyRequest(

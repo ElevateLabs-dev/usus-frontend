@@ -1390,7 +1390,7 @@ function ScenarioCard({
       {/* Action */}
       <div className="mt-auto pt-6">
         <Link
-          href={`/scenarios/${scenario.id}/role-play`}
+          href={`/scenarios/${scenario.id}`}
           className="
             flex
             w-full

@@ -1,7 +1,7 @@
-import type { SkillEvaluation } from "@/types/evaluation";
+import type { EvaluationSkill } from "@/types/evaluation";
 
 interface SkillBreakdownProps {
-  skills: SkillEvaluation[];
+  skills: EvaluationSkill[];
 }
 
 export function SkillBreakdown({

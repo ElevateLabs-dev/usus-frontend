@@ -1,7 +1,7 @@
-import type { ConversationInsight } from "@/types/evaluation";
+import type { EvaluationInsight } from "@/types/evaluation";
 
 interface ConversationInsightsProps {
-  insights: ConversationInsight[];
+  insights: EvaluationInsight[];
 }
 
 export function ConversationInsights({

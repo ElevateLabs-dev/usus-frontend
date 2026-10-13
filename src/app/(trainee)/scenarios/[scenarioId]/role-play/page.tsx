@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import {
   getScenario,
   type BackendScenario,
+  type BackendScenarioBrief,
 } from "@/services/scenario-service";
 
 import {
@@ -52,7 +53,7 @@ interface RolePlayScenario {
 }
 
 function mapBackendScenario(
-  scenario: BackendScenario,
+  scenario: BackendScenarioBrief,
 ): RolePlayScenario {
   const persona =
     scenario.persona.charAt(0).toUpperCase() +
@@ -60,16 +61,30 @@ function mapBackendScenario(
 
   return {
     id: scenario.id,
-    category: "Customer scenario",
+    category:
+      scenario.category?.name ??
+      "Customer scenario",
     difficulty: scenario.difficulty,
     title: scenario.name,
-    durationMinutes: 10,
-    objective: scenario.description,
+    durationMinutes:
+      scenario.estimated_minutes,
+    objective:
+      scenario.trainee_objective ??
+      scenario.description,
     customer: {
-      name: "Customer",
-      personality: persona,
-      emotionalState: persona,
-      background: scenario.description,
+      name:
+        scenario.customer.name ??
+        "Customer",
+      personality:
+        scenario.customer.personality ??
+        persona,
+      emotionalState:
+        scenario.customer.emotion ??
+        persona,
+      background:
+        scenario.customer.background ??
+        scenario.situation ??
+        scenario.description,
     },
   };
 }

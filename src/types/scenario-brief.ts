@@ -23,6 +23,8 @@ export interface ScenarioBrief {
   situation: {
     summary: string;
     background?: string;
+    /** What the customer wants. */
+    customerGoal?: string;
   };
 
   objective: string;

@@ -7,30 +7,69 @@ import {
   getScenario,
   type BackendScenario,
 } from "@/services/scenario-service";
+import type {
+  BackendDimensionScore,
+  BackendEvaluation,
+  BackendRedFlag,
+} from "@/services/simulation-service";
 
-interface BackendDimensionScore {
-  id: string;
-  evaluation_id: string;
-  dimension_name: string;
-  score: number;
-  rationale: string;
+/*
+ * The backend generates the evaluation in the
+ * background after a session ends (usually
+ * 10-30 seconds). Until it is ready the
+ * endpoint answers with this message.
+ */
+const EVALUATION_PENDING_MESSAGE =
+  "Evaluation is still being generated.";
+
+const EVALUATION_POLL_INTERVAL_MS = 2500;
+
+const EVALUATION_MAX_WAIT_MS = 90000;
+
+function wait(ms: number) {
+  return new Promise((resolve) =>
+    window.setTimeout(resolve, ms),
+  );
 }
 
-interface BackendRedFlag {
-  id: string;
-  evaluation_id: string;
-  reason: string;
-  description: string;
-}
+/**
+ * Get the evaluation, waiting while the
+ * backend is still generating it.
+ */
+async function waitForEvaluation(
+  sessionId: string,
+): Promise<BackendEvaluation> {
+  const startedAt = Date.now();
 
-interface BackendEvaluation {
-  id: string;
-  tenant_id: string;
-  session_id: string;
-  overall_score: number | null;
-  summary: string | null;
-  dimension_scores: BackendDimensionScore[];
-  red_flags: BackendRedFlag[];
+  while (true) {
+    try {
+      return await apiClient<BackendEvaluation>(
+        `/simulations/${sessionId}/evaluation`,
+      );
+    } catch (error) {
+      const stillGenerating =
+        error instanceof Error &&
+        error.message ===
+          EVALUATION_PENDING_MESSAGE;
+
+      if (!stillGenerating) {
+        throw error;
+      }
+
+      if (
+        Date.now() - startedAt >
+        EVALUATION_MAX_WAIT_MS
+      ) {
+        throw new Error(
+          "Your evaluation is taking longer than expected. Please refresh this page in a moment.",
+        );
+      }
+
+      await wait(
+        EVALUATION_POLL_INTERVAL_MS,
+      );
+    }
+  }
 }
 
 function formatDifficulty(
@@ -51,10 +90,12 @@ function formatDifficulty(
 function mapInsights(
   dimensionScores: BackendDimensionScore[],
   redFlags: BackendRedFlag[],
+  missedOpportunities: string[],
 ): EvaluationInsight[] {
   const dimensionInsights: EvaluationInsight[] =
     dimensionScores.map((dimension) => {
-      const isPositive = dimension.score >= 7;
+      // Scores are 0-100; 70+ is "Good".
+      const isPositive = dimension.score >= 70;
 
       return {
         id: dimension.id,
@@ -76,8 +117,20 @@ function mapInsights(
       type: "improvement",
     }));
 
+  const missedOpportunityInsights: EvaluationInsight[] =
+    missedOpportunities.map(
+      (opportunity, index) => ({
+        id: `missed-${index}`,
+        category: "Missed opportunity",
+        title: "Missed opportunity",
+        description: opportunity,
+        type: "improvement",
+      }),
+    );
+
   return [
     ...dimensionInsights,
+    ...missedOpportunityInsights,
     ...redFlagInsights,
   ];
 }
@@ -95,10 +148,9 @@ function mapEvaluation(
         name:
           dimension.dimension_name,
 
-        // Backend: 1–10
-        // Frontend: 0–100
+        // Backend scores are already 0–100.
         score:
-          dimension.score * 10,
+          dimension.score,
 
         description:
           dimension.rationale,
@@ -119,6 +171,7 @@ function mapEvaluation(
         scenario.name,
 
       category:
+        scenario.category?.name ??
         "Customer scenario",
 
       difficulty:
@@ -138,32 +191,25 @@ function mapEvaluation(
 
     skills,
 
-    /*
-     * The backend currently does not
-     * return separate strengths.
-     */
-    strengths: [],
+    strengths:
+      evaluation.strengths ?? [],
 
-    /*
-     * The backend currently does not
-     * return separate improvements.
-     */
-    improvements: [],
+    improvements:
+      evaluation.improvements ?? [],
 
     insights:
       mapInsights(
         evaluation.dimension_scores,
         evaluation.red_flags,
+        evaluation.missed_opportunities ??
+          [],
       ),
 
-    /*
-     * The backend currently does not
-     * return recommendations.
-     */
-    recommendations: [],
+    recommendations:
+      evaluation.recommendations ?? [],
 
     createdAt:
-      undefined,
+      evaluation.created_at,
   };
 }
 
@@ -176,12 +222,11 @@ export async function getEvaluation({
 }): Promise<EvaluationData | null> {
   /*
    * Get the real evaluation generated
-   * by the backend.
+   * by the backend, waiting while it is
+   * still being generated.
    */
   const evaluation =
-    await apiClient<BackendEvaluation>(
-      `/simulations/${sessionId}/evaluation`,
-    );
+    await waitForEvaluation(sessionId);
 
   /*
    * Get the real scenario so the

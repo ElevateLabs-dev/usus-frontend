@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, Play } from "lucide-react";
 
-import { scenarioBriefs } from "@/data/scenario-brief";
+import { getScenarioBrief } from "@/services/scenario-service";
+
+import type { ScenarioBrief } from "@/types/scenario-brief";
 
 interface ScenarioBriefPageProps {
   params: Promise<{
@@ -19,7 +21,64 @@ export default function ScenarioBriefPage({
 
   const { scenarioId } = React.use(params);
 
-  const scenario = scenarioBriefs[scenarioId];
+  const [scenario, setScenario] =
+    useState<ScenarioBrief | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadScenario() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data =
+          await getScenarioBrief(scenarioId);
+
+        if (!cancelled) {
+          setScenario(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setScenario(null);
+
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load scenario.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadScenario();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [scenarioId]);
+
+  if (loading) {
+    return (
+      <main className="min-h-full bg-[var(--usus-background)]">
+        <div className="mx-auto max-w-4xl px-5 py-16 text-center sm:px-8">
+          <p className="text-sm text-[var(--usus-text-muted)]">
+            Loading scenario...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   if (!scenario) {
     return (
@@ -30,8 +89,8 @@ export default function ScenarioBriefPage({
           </h1>
 
           <p className="mt-2 text-sm text-[var(--usus-text-muted)]">
-            The scenario you are looking for does not exist or is no longer
-            available.
+            {error ||
+              "The scenario you are looking for does not exist or is no longer available."}
           </p>
 
           <button
@@ -60,9 +119,11 @@ export default function ScenarioBriefPage({
   }
 
 
+  const currentScenarioId = scenario.id;
+
   function startSimulation() {
     router.push(
-      `/scenarios/${scenario.id}/role-play`
+      `/scenarios/${currentScenarioId}/role-play`
     );
   }
 
@@ -171,6 +232,18 @@ export default function ScenarioBriefPage({
 
                   <p className="mt-1.5 text-sm leading-6 text-[var(--usus-text-muted)]">
                     {scenario.situation.background}
+                  </p>
+                </div>
+              )}
+
+              {scenario.situation.customerGoal && (
+                <div className="mt-5 rounded-xl bg-[var(--usus-surface-soft)] p-4">
+                  <p className="text-xs font-semibold text-[var(--usus-text)]">
+                    What the customer wants
+                  </p>
+
+                  <p className="mt-1.5 text-sm leading-6 text-[var(--usus-text-muted)]">
+                    {scenario.situation.customerGoal}
                   </p>
                 </div>
               )}
