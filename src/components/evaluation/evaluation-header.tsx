@@ -7,6 +7,22 @@ interface EvaluationHeaderProps {
   completionTime: number;
 }
 
+/**
+ * Completion time arrives in seconds.
+ */
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.round(totalSeconds % 60);
+
+  if (minutes === 0) {
+    return `${seconds} sec`;
+  }
+
+  return seconds === 0
+    ? `${minutes} min`
+    : `${minutes} min ${seconds} sec`;
+}
+
 export function EvaluationHeader({
   scenario,
   completionTime,
@@ -53,7 +69,7 @@ export function EvaluationHeader({
           </p>
 
           <p className="mt-1 text-lg font-bold text-[var(--usus-text)]">
-            {completionTime} min
+            {formatDuration(completionTime)}
           </p>
         </div>
       </div>
