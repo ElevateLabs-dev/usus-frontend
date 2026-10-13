@@ -32,19 +32,57 @@ async function proxyRequest(
     request.method !== "GET" &&
     request.method !== "HEAD";
 
+  /*
+   * Keep the body as bytes so it can be sent
+   * again if the backend redirects the request.
+   */
   const body = hasBody
-    ? await request.arrayBuffer()
+    ? new Uint8Array(
+        await request.arrayBuffer(),
+      )
     : undefined;
 
-  const response = await fetch(
-    targetUrl,
-    {
+  const send = (url: string) =>
+    fetch(url, {
       method: request.method,
       headers,
-      body,
-      redirect: "follow",
-    },
-  );
+      // A fresh copy each time: a sent body
+      // cannot be reused.
+      body: body ? body.slice() : undefined,
+      redirect: "manual",
+    });
+
+  let response = await send(targetUrl);
+
+  /*
+   * FastAPI redirects "/users" to "/users/"
+   * (Next.js removes the trailing slash before
+   * the request reaches this proxy). Follow that
+   * redirect here, with the body, as long as it
+   * stays on the backend.
+   */
+  if (
+    [301, 302, 307, 308].includes(
+      response.status,
+    )
+  ) {
+    const location =
+      response.headers.get("location");
+
+    const redirectUrl = location
+      ? new URL(location, targetUrl)
+      : null;
+
+    if (
+      redirectUrl &&
+      redirectUrl.origin ===
+        new URL(BACKEND_URL).origin
+    ) {
+      response = await send(
+        redirectUrl.toString(),
+      );
+    }
+  }
 
   const responseHeaders =
     new Headers(response.headers);

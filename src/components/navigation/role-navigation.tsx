@@ -6,6 +6,16 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { roleNavigation } from "@/config/role-navigation";
 
+/*
+ * A role's dashboard is the parent of its other
+ * pages, so it is only highlighted on an exact match.
+ */
+const DASHBOARD_ROUTES = [
+  "/platform-admin",
+  "/company-admin",
+  "/manager",
+];
+
 export function RoleNavigation() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -21,7 +31,7 @@ export function RoleNavigation() {
       {items.map((item) => {
         const active =
           pathname === item.href ||
-          (item.href !== "/platform-admin" &&
+          (!DASHBOARD_ROUTES.includes(item.href) &&
             pathname.startsWith(`${item.href}/`));
 
         return (
