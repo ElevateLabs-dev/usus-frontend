@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { mustChangePassword } from "@/services/auth-state";
 import { getRoleHome } from "@/services/role-routing";
 import type { UserRole } from "@/types/auth";
 
@@ -31,6 +32,11 @@ export function RoleGuard({
 
     if (!isAuthenticated || !user) {
       router.replace("/login");
+      return;
+    }
+
+    if (mustChangePassword()) {
+      router.replace("/change-password");
       return;
     }
 

@@ -4,6 +4,8 @@ import type {
   LoginResponse,
 } from "@/types/auth";
 
+import { apiClient } from "@/services/api-client";
+
 const API_URL = "/api/backend";
 
 /**
@@ -94,6 +96,16 @@ export async function login(
   const data =
     (await response.json()) as LoginResponse;
 
+  storeTokens(data);
+
+  return data;
+}
+
+/**
+ * Save the tokens returned by the backend
+ * and tell the app the signed-in user changed.
+ */
+function storeTokens(data: LoginResponse) {
   localStorage.setItem(
     "usus_access_token",
     data.access_token,
@@ -114,6 +126,33 @@ export async function login(
       "usus-auth-change",
     ),
   );
+}
+
+/**
+ * Replace the signed-in user's password.
+ *
+ * Used on first sign-in to swap the emailed
+ * temporary password for a real one. The backend
+ * returns a new token without the password-change
+ * restriction, which replaces the stored one.
+ */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<LoginResponse> {
+  const data =
+    await apiClient<LoginResponse>(
+      "/auth/change-password",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      },
+    );
+
+  storeTokens(data);
 
   return data;
 }

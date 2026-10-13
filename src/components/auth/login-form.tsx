@@ -77,10 +77,20 @@ export function LoginForm() {
        * Tenant ID has intentionally been
        * removed from the login form.
        */
-      await login({
+      const session = await login({
         username: email,
         password,
       });
+
+      /*
+       * Invited users sign in with a temporary
+       * password and must replace it before
+       * they can use the app.
+       */
+      if (session.must_change_password) {
+        router.replace("/change-password");
+        return;
+      }
 
       /*
        * Get access token

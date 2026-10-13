@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { isAuthenticated } from "@/services/auth-state";
+import {
+  isAuthenticated,
+  mustChangePassword,
+} from "@/services/auth-state";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -22,6 +25,12 @@ export function AuthGuard({
   useEffect(() => {
     const checkAuthentication = () => {
       const valid = isAuthenticated();
+
+      if (valid && mustChangePassword()) {
+        setChecking(false);
+        router.replace("/change-password");
+        return;
+      }
 
       if (valid) {
         setAuthenticated(true);

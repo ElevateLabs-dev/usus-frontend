@@ -4,6 +4,8 @@ export interface AuthUser {
   user_id: string;
   role: UserRole;
   tenant_id?: string;
+  /** Present while a temporary password is in use. */
+  pwd_change?: boolean;
   exp: number;
 }
 
@@ -64,4 +66,12 @@ export function getUserRole(): UserRole | null {
 
 export function getTenantId(): string | null {
   return getAuthUser()?.tenant_id ?? null;
-};
+}
+
+/**
+ * True while the signed-in user still has
+ * to replace their temporary password.
+ */
+export function mustChangePassword(): boolean {
+  return getAuthUser()?.pwd_change === true;
+}
