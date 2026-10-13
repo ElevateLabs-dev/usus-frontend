@@ -1,9 +1,48 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { useAuth } from "@/components/auth/auth-provider";
+
+import {
+  getOrganisations,
+  type Organisation,
+} from "@/services/organisations-service";
 
 export default function PlatformAdminPage() {
   const { user } = useAuth();
+
+  /*
+   * Overview numbers come from the
+   * organisations list.
+   */
+  const [organisations, setOrganisations] =
+    useState<Organisation[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getOrganisations()
+      .then((data) => {
+        if (!cancelled) {
+          setOrganisations(data);
+        }
+      })
+      .catch(() => {
+        // Keep the "—" placeholders.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const metric = (
+    count: (items: Organisation[]) => number,
+  ) =>
+    organisations
+      ? String(count(organisations))
+      : "—";
 
   return (
     <div className="min-h-full bg-[var(--usus-background)]">
@@ -40,26 +79,46 @@ export default function PlatformAdminPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <DashboardCard
                 title="Organisations"
-                value="—"
+                value={metric(
+                  (items) => items.length,
+                )}
                 description="Customer organisations"
               />
 
               <DashboardCard
                 title="Active Organisations"
-                value="—"
+                value={metric(
+                  (items) =>
+                    items.filter(
+                      (item) => item.is_active,
+                    ).length,
+                )}
                 description="Currently active"
               />
 
               <DashboardCard
                 title="Total Users"
-                value="—"
+                value={metric((items) =>
+                  items.reduce(
+                    (total, item) =>
+                      total + item.users_count,
+                    0,
+                  ),
+                )}
                 description="Across all organisations"
               />
 
               <DashboardCard
                 title="Training Activity"
-                value="—"
-                description="Active training users"
+                value={metric((items) =>
+                  items.reduce(
+                    (total, item) =>
+                      total +
+                      item.sessions_completed,
+                    0,
+                  ),
+                )}
+                description="Training sessions completed"
               />
             </div>
           </section>

@@ -4,25 +4,61 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import {
+  createOrganisation,
+  setOrganisationActive,
+} from "@/services/organisations-service";
+
 export default function CreateOrganisationPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [contactName, setContactName] = useState("");
+  const [status, setStatus] = useState("active");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(
+  async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
+    setError("");
     setLoading(true);
 
-    // Backend integration will be added later.
-    setTimeout(() => {
+    try {
+      /*
+       * Creates the organisation, its starter
+       * scenarios and its company admin, who is
+       * emailed an invitation.
+       */
+      const organisation =
+        await createOrganisation({
+          name: name.trim(),
+          adminEmail: email.trim(),
+          adminFullName: contactName.trim(),
+        });
+
+      if (status === "inactive") {
+        await setOrganisationActive(
+          organisation.id,
+          false,
+        );
+      }
+
+      router.push(
+        "/platform-admin/organisations",
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to create the organisation.",
+      );
+
       setLoading(false);
-    }, 500);
+    }
   }
 
   return (
@@ -87,7 +123,7 @@ export default function CreateOrganisationPage() {
                   htmlFor="organisation-email"
                   className="mb-2 block text-sm font-medium text-[var(--usus-text)]"
                 >
-                  Organisation email
+                  Company admin email
                 </label>
 
                 <input
@@ -101,6 +137,12 @@ export default function CreateOrganisationPage() {
                   required
                   className="h-11 w-full rounded-lg border border-[var(--usus-border)] bg-[var(--usus-surface)] px-3 text-sm text-[var(--usus-text)] outline-none transition-colors placeholder:text-[var(--usus-text-soft)] focus:border-[var(--usus-primary)] focus:ring-2 focus:ring-[var(--usus-primary-soft)]"
                 />
+
+                <p className="mt-2 text-xs text-[var(--usus-text-muted)]">
+                  This person becomes the organisation&apos;s
+                  company admin and receives an invitation
+                  email with a temporary password.
+                </p>
               </div>
 
               {/* Contact person */}
@@ -136,7 +178,10 @@ export default function CreateOrganisationPage() {
 
                 <select
                   id="organisation-status"
-                  defaultValue="active"
+                  value={status}
+                  onChange={(event) =>
+                    setStatus(event.target.value)
+                  }
                   className="h-11 w-full rounded-lg border border-[var(--usus-border)] bg-[var(--usus-surface)] px-3 text-sm text-[var(--usus-text)] outline-none transition-colors focus:border-[var(--usus-primary)] focus:ring-2 focus:ring-[var(--usus-primary-soft)]"
                 >
                   <option value="active">
@@ -149,6 +194,16 @@ export default function CreateOrganisationPage() {
                 </select>
               </div>
             </div>
+
+            {/* Error */}
+            {error && (
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-[var(--usus-danger)] bg-[var(--usus-surface)] px-4 py-3 text-sm text-[var(--usus-danger)]"
+              >
+                {error}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[var(--usus-border)] pt-6 sm:flex-row sm:justify-end">
