@@ -1,12 +1,69 @@
-import { learningPathData } from "@/data/learning-path";
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { getLearningPath } from "@/services/learning-path-service";
+
+import type { LearningPathData } from "@/types/learning-path";
 
 export default function LearningPathPage() {
+  const [data, setData] =
+    useState<LearningPathData | null>(null);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLearningPath() {
+      try {
+        const result =
+          await getLearningPath();
+
+        if (!cancelled) {
+          setData(result);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load your learning path.",
+          );
+        }
+      }
+    }
+
+    loadLearningPath();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!data) {
+    return (
+      <div className="min-h-full bg-[var(--usus-background)]">
+        <main className="mx-auto w-full max-w-[1440px] px-5 py-16 text-center sm:px-8 lg:px-10 xl:px-12">
+          <p
+            role={error ? "alert" : undefined}
+            className="text-sm text-[var(--usus-text-muted)]"
+          >
+            {error ||
+              "Loading your learning path..."}
+          </p>
+        </main>
+      </div>
+    );
+  }
+
   const {
     overall,
     levels,
     categories,
     currentLevel,
-  } = learningPathData;
+  } = data;
 
   const remaining = Math.max(
     0,

@@ -5,8 +5,14 @@ import {
 } from "@/hooks/use-auth-user";
 
 import {
-  dashboardData,
-} from "@/data/dashboard";
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  getDashboard,
+  type DashboardData,
+} from "@/services/dashboard-service";
 
 import {
   OverallProgress,
@@ -37,8 +43,78 @@ export default function DashboardPage() {
   const user =
     useAuthUser();
 
-  const data =
-    dashboardData;
+  const [data, setData] =
+    useState<DashboardData | null>(
+      null,
+    );
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboard() {
+      try {
+        const result =
+          await getDashboard();
+
+        if (!cancelled) {
+          setData(result);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load your dashboard.",
+          );
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!data) {
+    return (
+      <div
+        className="
+          min-h-full
+          bg-[var(--usus-background)]
+          text-[var(--usus-text)]
+        "
+      >
+        <main
+          className="
+            mx-auto
+            w-full
+            max-w-7xl
+            px-4
+            py-16
+            text-center
+            sm:px-6
+            lg:px-8
+          "
+        >
+          <p
+            role={error ? "alert" : undefined}
+            className="
+              text-sm
+              text-[var(--usus-text-muted)]
+            "
+          >
+            {error ||
+              "Loading your dashboard..."}
+          </p>
+        </main>
+      </div>
+    );
+  }
 
 
   return (
