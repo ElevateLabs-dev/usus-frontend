@@ -1,5 +1,6 @@
 import { apiClient } from "@/services/api-client";
 import { getTenantId } from "@/services/auth-state";
+import type { ScenarioBrief } from "@/types/scenario-brief";
 
 export type BackendScenarioDifficulty =
   | "beginner"
@@ -102,4 +103,108 @@ export async function getScenario(
   return apiClient<BackendScenarioBrief>(
     `/scenarios/${scenarioId}`,
   );
+}
+
+function formatDifficulty(
+  difficulty: BackendScenarioDifficulty,
+): ScenarioBrief["difficulty"] {
+  switch (difficulty) {
+    case "beginner":
+      return "Beginner";
+
+    case "intermediate":
+      return "Intermediate";
+
+    case "advanced":
+      return "Advanced";
+  }
+}
+
+function formatPersona(
+  persona: BackendScenarioPersona,
+) {
+  return (
+    persona.charAt(0).toUpperCase() +
+    persona.slice(1)
+  );
+}
+
+/**
+ * Get the pre-roleplay brief in the
+ * shape used by the Scenario Brief page.
+ */
+export async function getScenarioBrief(
+  scenarioId: string,
+): Promise<ScenarioBrief> {
+  const scenario =
+    await getScenario(scenarioId);
+
+  const persona =
+    formatPersona(scenario.persona);
+
+  return {
+    id: scenario.id,
+
+    title: scenario.name,
+
+    description: scenario.description,
+
+    category: scenario.category ?? {
+      id: "general",
+      name: "Customer scenario",
+    },
+
+    difficulty:
+      formatDifficulty(
+        scenario.difficulty,
+      ),
+
+    durationMinutes:
+      scenario.estimated_minutes,
+
+    customer: {
+      name:
+        scenario.customer.name ??
+        "Customer",
+
+      personality:
+        scenario.customer.personality ??
+        persona,
+
+      emotionalState:
+        scenario.customer.emotion ??
+        persona,
+
+      background:
+        scenario.customer.background ??
+        "",
+    },
+
+    situation: {
+      summary:
+        scenario.situation ??
+        scenario.description,
+
+      customerGoal:
+        scenario.customer_goal ??
+        undefined,
+    },
+
+    objective:
+      scenario.trainee_objective ??
+      scenario.description,
+
+    skills:
+      scenario.skills.map(
+        (skill) => skill.name,
+      ),
+
+    importantInformation:
+      scenario.important_information,
+
+    attempts:
+      scenario.progress.attempts,
+
+    canStart: true,
+  };
 }

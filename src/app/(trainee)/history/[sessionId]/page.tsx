@@ -1,6 +1,12 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+
 import Link from "next/link";
 
 import { getHistorySession } from "@/services/history";
+
+import type { HistorySession } from "@/types/history";
 
 interface HistoryReviewPageProps {
   params: Promise<{
@@ -8,13 +14,61 @@ interface HistoryReviewPageProps {
   }>;
 }
 
-export default async function HistoryReviewPage({
+export default function HistoryReviewPage({
   params,
 }: HistoryReviewPageProps) {
-  const { sessionId } = await params;
+  const { sessionId } = use(params);
 
-  const session =
-    await getHistorySession(sessionId);
+  const [session, setSession] =
+    useState<HistorySession | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSession() {
+      const data =
+        await getHistorySession(sessionId);
+
+      if (!cancelled) {
+        setSession(data);
+        setLoading(false);
+      }
+    }
+
+    loadSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  if (loading) {
+    return (
+      <main
+        className="
+          min-h-full
+          bg-[var(--usus-background)]
+        "
+      >
+        <div
+          className="
+            mx-auto
+            max-w-3xl
+            px-4
+            py-16
+            text-center
+          "
+        >
+          <p className="text-sm text-[var(--usus-text-muted)]">
+            Loading session...
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   /*
    * ============================================================

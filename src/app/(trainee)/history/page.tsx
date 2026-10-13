@@ -1,9 +1,55 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { getHistory } from "@/services/history";
+
+import type { HistorySession } from "@/types/history";
 
 import { SessionHistory } from "@/components/history/session-history";
 
-export default async function HistoryPage() {
-  const history = await getHistory();
+export default function HistoryPage() {
+  const [sessions, setSessions] =
+    useState<HistorySession[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      try {
+        const history =
+          await getHistory();
+
+        if (!cancelled) {
+          setSessions(history.sessions);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load your history.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main
@@ -47,7 +93,20 @@ export default async function HistoryPage() {
       </div>
 
       {/* Session history */}
-      <SessionHistory sessions={history.sessions} />
+      {loading ? (
+        <p className="text-sm text-[var(--usus-text-muted)]">
+          Loading your history...
+        </p>
+      ) : error ? (
+        <p
+          role="alert"
+          className="text-sm text-[var(--usus-danger)]"
+        >
+          {error}
+        </p>
+      ) : (
+        <SessionHistory sessions={sessions} />
+      )}
     </main>
   );
 };
