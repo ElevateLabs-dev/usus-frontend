@@ -12,15 +12,12 @@ const sizeClasses = {
   lg: "w-[150px] h-[135px]",
 };
 
-export function UsusLogo({
-  size = "md",
-  className,
-}: UsusLogoProps) {
+export function UsusLogo({ size = "md", className }: UsusLogoProps) {
   return (
     <div className={className}>
       {/* Light theme */}
       <Image
-        src="/brand/logos/usus-black.svg"
+        src="/brand/logos/Usus-black.svg"
         alt="USUS"
         // Pass base numbers for Next.js layout reservation
         width={100}
@@ -31,7 +28,7 @@ export function UsusLogo({
 
       {/* Dark theme */}
       <Image
-        src="/brand/logos/usus-white.svg"
+        src="/brand/logos/Usus-white.svg"
         alt="USUS"
         width={100}
         height={35}
