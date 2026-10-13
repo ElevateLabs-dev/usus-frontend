@@ -1,0 +1,19 @@
+# Render Blueprint for the USUS frontend (Next.js).
+# Dashboard → New → Blueprint → pick this repository.
+services:
+  - type: web
+    name: usus-frontend
+    runtime: node
+    region: frankfurt # same region as the backend (usus-api)
+    plan: free # free instances sleep after 15 min idle; upgrade for production
+    buildCommand: npm ci && npm run build
+    # `next start` listens on the PORT that Render provides.
+    startCommand: npm run start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      # The backend API. The browser never calls it directly: requests go
+      # through the Next.js proxy at /api/backend.
+      - key: BACKEND_URL
+        value: https://usus-api-utc7.onrender.com/api/v1
