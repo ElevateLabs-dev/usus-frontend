@@ -51,6 +51,13 @@ What is already connected to the backend, what is left, and which routes to use.
 | Dashboard | `GET /progress/me`, `GET /scenarios/`, `GET /simulations/` | `dashboard-service.ts` |
 | Learning path | `GET /scenarios/`, `GET /scenarios/categories` | `learning-path-service.ts` |
 | Company admin → Trainees | `GET /users/?role=trainee`, `POST /users/`, `POST /users/trainees/import`, `GET /users/trainees/import-template`, `POST /users/{id}/resend-invite`, `PATCH /users/{id}` | `users-service.ts` |
+| Platform admin → Dashboard | `GET /organizations/`, `GET /platform/activity`, `GET /platform/status` | `organisations-service.ts`, `platform-service.ts` |
+| Platform admin → Organisations, create | `GET /organizations/`, `POST /organizations/`, `PATCH /organizations/{id}` | `organisations-service.ts` |
+| Platform admin → Organisation page (`/platform-admin/organisations/[id]`) | `GET /organizations/{id}`, `PATCH /organizations/{id}` (rename, activate), `POST /organizations/{id}/admins`, `POST /organizations/{id}/users/{user_id}/resend-invite`, `PATCH /organizations/{id}/users/{user_id}` | `organisations-service.ts` |
+| Platform admin → Company Accounts | `GET /organizations/{id}` for each organisation, plus the resend-invite and (de)activate routes above | `organisations-service.ts` |
+| Platform admin → Platform Users | `GET /platform/admins`, `POST /platform/admins`, `PATCH /platform/admins/{id}`, `POST /platform/admins/{id}/resend-invite` | `platform-service.ts` |
+| Platform admin → Monitoring | `GET /platform/status`, `GET /platform/activity`, `GET /platform/alerts` | `platform-service.ts` |
+| Platform admin → Settings (maintenance mode) | `GET /platform/settings`, `PATCH /platform/settings`, `GET /platform/status` | `platform-service.ts` |
 
 ---
 
@@ -96,18 +103,13 @@ Managers can do everything a company admin can **for trainees only**, and cannot
 | **Performance** | `GET /progress/team`, `GET /progress/users/{user_id}` |
 | **Training** | Same scenario routes as the company admin. |
 
-### 3.4 Platform admin area (`/platform-admin/...`)
+### 3.4 Platform admin area
 
-These pages exist as static UI only.
+Done (see section 2). Notes:
 
-| Page | Routes | Notes |
-|---|---|---|
-| **Organisations** list | `GET /organizations/` | `name`, `is_active`, `users_count`, `trainees_count`, `scenarios_count`, `sessions_completed`. |
-| **New organisation** | `POST /organizations/` `{ name, admin_email, admin_full_name }` | One call creates the organisation, its starter scenarios and its company admin (invited by email). `409` = name or email already used. |
-| **Organisation detail / Company accounts** | `GET /organizations/{id}` | Adds `staff` (company admins and managers). |
-| **Rename / deactivate** | `PATCH /organizations/{id}` `{ name?, is_active? }` | Deactivating blocks all of the organisation's users immediately. |
-| **Monitoring** | `GET /organizations/` | Totals can be summed from the list; there is no dedicated endpoint. |
-| **Platform users** | none | Platform admins are created from the backend command line (`uv run seed-admin`). |
+- **Maintenance mode:** while on, everyone except platform admins gets `503 "Usus is down for maintenance..."` on sign-in and on every request. The login form already shows the message; other pages show it as an error.
+- **Alerts** (`GET /platform/alerts`): invite emails not delivered after 10 minutes, and ended sessions with no evaluation after 10 minutes.
+- **Platform users** cannot deactivate themselves (`400`). An organisation must keep one active company admin (`409`).
 
 ---
 
