@@ -171,3 +171,22 @@ export async function setUserActive(
     },
   );
 }
+
+/**
+ * Change a user's role (company admins
+ * only). You cannot change your own role,
+ * and an organisation keeps at least one
+ * active company admin (409).
+ */
+export async function setUserRole(
+  userId: string,
+  role: OrgRole,
+): Promise<OrgUser> {
+  return apiClient<OrgUser>(
+    `/users/${userId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    },
+  );
+}
