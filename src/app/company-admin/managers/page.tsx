@@ -44,6 +44,11 @@ function roleLabel(role: string) {
   );
 }
 
+/** "a manager" / "a company admin" */
+function roleWithArticle(role: string) {
+  return `a ${roleLabel(role).toLowerCase()}`;
+}
+
 function getStatus(user: OrgUser) {
   if (!user.is_active) {
     return "Deactivated";
@@ -209,7 +214,7 @@ export default function CompanyManagersPage() {
 
       setAddOpen(false);
       setNotice(
-        `${email} was added as ${roleLabel(role).toLowerCase()} and will receive an invitation email.`,
+        `${email} was added as ${roleWithArticle(role)} and will receive an invitation email.`,
       );
 
       await loadStaff();
@@ -355,7 +360,7 @@ export default function CompanyManagersPage() {
                                 event.target
                                   .value as OrgRole,
                               ),
-                            `${member.email} is now ${roleLabel(event.target.value).toLowerCase()}.`,
+                            `${member.email} is now ${roleWithArticle(event.target.value)}.`,
                           )
                         }
                         className="h-8 w-fit rounded-lg border border-[var(--usus-border)] bg-[var(--usus-surface)] px-2 text-xs text-[var(--usus-text)] outline-none focus:border-[var(--usus-primary)] disabled:opacity-60"
