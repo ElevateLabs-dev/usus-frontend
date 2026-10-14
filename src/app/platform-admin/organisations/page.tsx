@@ -187,9 +187,12 @@ export default function OrganisationsPage() {
                   className="grid gap-2 border-b border-[var(--usus-border)] px-6 py-4 text-sm last:border-b-0 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] md:items-center md:gap-4"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-[var(--usus-text)]">
+                    <Link
+                      href={`/platform-admin/organisations/${organisation.id}`}
+                      className="block truncate font-medium text-[var(--usus-text)] transition-colors hover:text-[var(--usus-primary)]"
+                    >
                       {organisation.name}
-                    </p>
+                    </Link>
 
                     <p className="text-xs text-[var(--usus-text-muted)]">
                       {organisation.trainees_count}{" "}
@@ -228,7 +231,14 @@ export default function OrganisationsPage() {
                     )}
                   </span>
 
-                  <div className="md:text-right">
+                  <div className="flex flex-wrap gap-4 md:justify-end">
+                    <Link
+                      href={`/platform-admin/organisations/${organisation.id}`}
+                      className="text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:text-[var(--usus-primary)]"
+                    >
+                      Manage
+                    </Link>
+
                     <button
                       type="button"
                       disabled={

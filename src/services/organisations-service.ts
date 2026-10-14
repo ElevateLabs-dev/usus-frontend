@@ -104,3 +104,78 @@ export async function setOrganisationActive(
     },
   );
 }
+
+/**
+ * Rename an organisation.
+ */
+export async function renameOrganisation(
+  organisationId: string,
+  name: string,
+): Promise<OrganisationDetail> {
+  return apiClient<OrganisationDetail>(
+    `/organizations/${organisationId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+/**
+ * Add another company admin to an
+ * organisation. They are emailed an
+ * invitation with a temporary password.
+ */
+export async function addCompanyAdmin(
+  organisationId: string,
+  input: {
+    email: string;
+    fullName?: string;
+  },
+): Promise<OrgUser> {
+  return apiClient<OrgUser>(
+    `/organizations/${organisationId}/admins`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: input.email,
+        full_name: input.fullName || null,
+      }),
+    },
+  );
+}
+
+/**
+ * Email a user of an organisation a new
+ * temporary password.
+ */
+export async function resendMemberInvite(
+  organisationId: string,
+  userId: string,
+): Promise<void> {
+  await apiClient(
+    `/organizations/${organisationId}/users/${userId}/resend-invite`,
+    { method: "POST" },
+  );
+}
+
+/**
+ * Activate or deactivate a user of an
+ * organisation. The last active company
+ * admin cannot be deactivated (409).
+ */
+export async function setMemberActive(
+  organisationId: string,
+  userId: string,
+  isActive: boolean,
+): Promise<OrgUser> {
+  return apiClient<OrgUser>(
+    `/organizations/${organisationId}/users/${userId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        is_active: isActive,
+      }),
+    },
+  );
+}

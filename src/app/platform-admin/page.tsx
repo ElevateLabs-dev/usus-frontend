@@ -3,11 +3,23 @@
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import {
+  ActivityList,
+  CheckList,
+  OVERALL_LABELS,
+} from "@/components/platform-admin/platform-status";
 
 import {
   getOrganisations,
   type Organisation,
 } from "@/services/organisations-service";
+
+import {
+  getPlatformActivity,
+  getPlatformStatus,
+  type ActivityItem,
+  type PlatformStatus,
+} from "@/services/platform-service";
 
 export default function PlatformAdminPage() {
   const { user } = useAuth();
@@ -18,6 +30,13 @@ export default function PlatformAdminPage() {
    */
   const [organisations, setOrganisations] =
     useState<Organisation[] | null>(null);
+
+  const [activity, setActivity] = useState<
+    ActivityItem[] | null
+  >(null);
+
+  const [status, setStatus] =
+    useState<PlatformStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +49,26 @@ export default function PlatformAdminPage() {
       })
       .catch(() => {
         // Keep the "—" placeholders.
+      });
+
+    getPlatformActivity(6)
+      .then((data) => {
+        if (!cancelled) {
+          setActivity(data);
+        }
+      })
+      .catch(() => {
+        // Keep the empty state.
+      });
+
+    getPlatformStatus()
+      .then((data) => {
+        if (!cancelled) {
+          setStatus(data);
+        }
+      })
+      .catch(() => {
+        // Keep the empty state.
       });
 
     return () => {
@@ -72,7 +111,7 @@ export default function PlatformAdminPage() {
               </h2>
 
               <p className="mt-1 text-sm text-[var(--usus-text-muted)]">
-                Key platform metrics will appear here.
+                Key platform metrics.
               </p>
             </div>
 
@@ -129,14 +168,26 @@ export default function PlatformAdminPage() {
               title="Platform Activity"
               description="Recent activity across the USUS platform."
             >
-              <EmptyState message="No platform activity data available yet." />
+              {activity && activity.length > 0 ? (
+                <ActivityList items={activity} />
+              ) : (
+                <EmptyState message="No platform activity data available yet." />
+              )}
             </DashboardSection>
 
             <DashboardSection
               title="Platform Health"
-              description="System and organisation health information."
+              description={
+                status
+                  ? `${OVERALL_LABELS[status.overall]} · ${status.environment}`
+                  : "System and organisation health information."
+              }
             >
-              <EmptyState message="Platform health information will appear here." />
+              {status ? (
+                <CheckList checks={status.checks} />
+              ) : (
+                <EmptyState message="Platform health information will appear here." />
+              )}
             </DashboardSection>
           </div>
 
