@@ -18,8 +18,32 @@ async function proxyRequest(
   const queryString =
     request.nextUrl.search;
 
+  /*
+   * Stay inside BACKEND_URL's path (e.g. never
+   * reach the backend's /admin panel): reject
+   * "." and ".." and encode each segment so an
+   * encoded "/" stays part of one segment.
+   */
+  if (
+    path.some(
+      (segment) =>
+        segment === "." || segment === "..",
+    )
+  ) {
+    return NextResponse.json(
+      { detail: "Invalid path." },
+      { status: 400 },
+    );
+  }
+
+  const targetPath = path
+    .map((segment) =>
+      encodeURIComponent(segment),
+    )
+    .join("/");
+
   const targetUrl =
-    `${BACKEND_URL}/${path.join("/")}${queryString}`;
+    `${BACKEND_URL}/${targetPath}${queryString}`;
 
   const headers = new Headers(
     request.headers,
@@ -27,6 +51,10 @@ async function proxyRequest(
 
   headers.delete("host");
   headers.delete("content-length");
+
+  // The API uses bearer tokens; this site's
+  // cookies never need to reach the backend.
+  headers.delete("cookie");
 
   const hasBody =
     request.method !== "GET" &&
@@ -94,6 +122,10 @@ async function proxyRequest(
   responseHeaders.delete(
     "content-length",
   );
+
+  // Never let the backend set cookies on
+  // this site.
+  responseHeaders.delete("set-cookie");
 
   return new NextResponse(
     response.body,
