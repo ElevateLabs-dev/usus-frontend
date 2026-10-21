@@ -2,6 +2,7 @@ import type { UserRole } from "@/types/auth";
 
 export interface AuthUser {
   user_id: string;
+  email?: string;
   role: UserRole;
   tenant_id?: string;
   /** Present while a temporary password is in use. */

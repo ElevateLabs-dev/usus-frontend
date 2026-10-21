@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useStaffArea } from "@/hooks/use-staff-area";
+
 import {
   getMyOrganisation,
   getTeamProgress,
@@ -22,6 +24,8 @@ function formatDate(value: string) {
 }
 
 export default function CompanyAdminPage() {
+  const area = useStaffArea();
+
   const [organisation, setOrganisation] =
     useState<MyOrganisation | null>(null);
 
@@ -106,12 +110,15 @@ export default function CompanyAdminPage() {
             </p>
 
             <h1 className="mt-2 text-2xl font-semibold text-[var(--usus-text)]">
-              Company Admin Dashboard
+              {area.isManager
+                ? "Manager Dashboard"
+                : "Company Admin Dashboard"}
             </h1>
 
             <p className="mt-2 text-sm text-[var(--usus-text-muted)]">
-              Manage your organisation, users, training,
-              and company performance.
+              {area.isManager
+                ? "Manage your team, their training, and their performance."
+                : "Manage your organisation, users, training, and company performance."}
             </p>
           </div>
 
@@ -172,7 +179,7 @@ export default function CompanyAdminPage() {
               title="Recently Active Trainees"
               description="Trainees who practised most recently."
               action={{
-                href: "/company-admin/performance",
+                href: area.performance,
                 label: "View performance",
               }}
             >
@@ -225,28 +232,38 @@ export default function CompanyAdminPage() {
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <QuickLink
-                  href="/company-admin/trainees"
+                  href={area.trainees}
                   title="Add trainees"
                   description="Invite one by one or import from Excel."
                 />
 
-                <QuickLink
-                  href="/company-admin/managers"
-                  title="Manage staff"
-                  description="Managers and company admins."
-                />
+                {area.isManager ? (
+                  <QuickLink
+                    href={area.performance}
+                    title="Team performance"
+                    description="Scores and progress for each trainee."
+                  />
+                ) : (
+                  <QuickLink
+                    href="/company-admin/managers"
+                    title="Manage staff"
+                    description="Managers and company admins."
+                  />
+                )}
 
                 <QuickLink
-                  href="/company-admin/training"
+                  href={area.training}
                   title="Training scenarios"
                   description={`${metric(organisation?.scenarios_count)} active scenarios.`}
                 />
 
-                <QuickLink
-                  href="/company-admin/settings"
-                  title="Settings"
-                  description="Your organisation's details."
-                />
+                {!area.isManager && (
+                  <QuickLink
+                    href="/company-admin/settings"
+                    title="Settings"
+                    description="Your organisation's details."
+                  />
+                )}
               </div>
             </DashboardSection>
           </div>

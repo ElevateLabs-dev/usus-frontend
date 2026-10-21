@@ -1,16 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Bell, LogOut, Menu, User } from "lucide-react";
+import { LogOut, Menu, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { UsusLogo } from "@/components/brand/usus-logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { NotificationModal } from "@/components/notifications/notification-modal";
-import { notifications as initialNotifications } from "@/data/notifications";
-
-import type { NotificationItem } from "@/types/notifications";
 
 import {
   logout,
@@ -38,20 +33,6 @@ export function TraineeHeader({
    */
   const user = useAuthUser();
 
-  /*
-   * Notification state.
-   */
-  const [
-    notificationsOpen,
-    setNotificationsOpen,
-  ] = useState(false);
-
-  const [
-    notificationItems,
-    setNotificationItems,
-  ] = useState<NotificationItem[]>(
-    initialNotifications,
-  );
 
 
   /*
@@ -80,54 +61,6 @@ export function TraineeHeader({
           .charAt(0)
           .toUpperCase()
       : "U";
-
-
-  /*
-   * Number of unread notifications.
-   */
-  const unreadCount =
-    notificationItems.filter(
-      (notification) =>
-        !notification.read,
-    ).length;
-
-
-  /*
-   * Mark one notification as read.
-   */
-  function handleNotificationRead(
-    notificationId: string,
-  ) {
-    setNotificationItems(
-      (current) =>
-        current.map(
-          (notification) =>
-            notification.id ===
-            notificationId
-              ? {
-                  ...notification,
-                  read: true,
-                }
-              : notification,
-        ),
-    );
-  }
-
-
-  /*
-   * Mark all notifications as read.
-   */
-  function handleMarkAllAsRead() {
-    setNotificationItems(
-      (current) =>
-        current.map(
-          (notification) => ({
-            ...notification,
-            read: true,
-          }),
-        ),
-    );
-  }
 
 
   /*
@@ -194,72 +127,6 @@ export function TraineeHeader({
               sm:gap-5
             "
           >
-
-            {/* ===================================================
-                NOTIFICATIONS
-            ==================================================== */}
-
-            <button
-              type="button"
-              onClick={() =>
-                setNotificationsOpen(true)
-              }
-              aria-label={
-                unreadCount > 0
-                  ? `Notifications, ${unreadCount} unread`
-                  : "Notifications"
-              }
-              className="
-                relative
-                hidden
-                h-9
-                w-9
-                cursor-pointer
-                items-center
-                justify-center
-                rounded-full
-                text-[var(--usus-text-muted)]
-                transition-all
-                duration-200
-                hover:bg-[var(--usus-sidebar-hover)]
-                hover:text-[var(--usus-text)]
-                focus:outline-none
-                focus:ring-2
-                focus:ring-[var(--usus-primary)]
-                md:flex
-              "
-            >
-              <Bell
-                size={19}
-                strokeWidth={1.8}
-              />
-
-              {unreadCount > 0 && (
-                <span
-                  className="
-                    absolute
-                    -right-0.5
-                    -top-0.5
-                    flex
-                    h-4
-                    min-w-4
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-[var(--usus-primary)]
-                    px-1
-                    text-[9px]
-                    font-bold
-                    text-black
-                  "
-                >
-                  {unreadCount > 9
-                    ? "9+"
-                    : unreadCount}
-                </span>
-              )}
-            </button>
-
 
             {/* ===================================================
                 THEME TOGGLE
@@ -570,27 +437,6 @@ export function TraineeHeader({
       </header>
 
 
-      {/* =========================================================
-          NOTIFICATION MODAL
-      ========================================================== */}
-
-      <NotificationModal
-        open={
-          notificationsOpen
-        }
-        notifications={
-          notificationItems
-        }
-        onClose={() =>
-          setNotificationsOpen(false)
-        }
-        onNotificationRead={
-          handleNotificationRead
-        }
-        onMarkAllAsRead={
-          handleMarkAllAsRead
-        }
-      />
     </>
   );
 }

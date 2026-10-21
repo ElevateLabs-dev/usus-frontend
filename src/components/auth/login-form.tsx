@@ -1,6 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useState } from "react";
 
 import { Button, Input } from "@/components/ui";
@@ -13,7 +16,13 @@ export function LoginForm() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+
+  const [error, setError] = useState(
+    searchParams.get("reason") === "role-changed"
+      ? "Your role has changed. Please sign in again."
+      : "",
+  );
   const [success, setSuccess] = useState("");
 
   async function handleSubmit(

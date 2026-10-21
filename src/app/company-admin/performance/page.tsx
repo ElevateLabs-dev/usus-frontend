@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useStaffArea } from "@/hooks/use-staff-area";
 import { useEffect, useState } from "react";
 
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -32,6 +33,8 @@ function score(value: number | null) {
 }
 
 export default function CompanyPerformancePage() {
+  const area = useStaffArea();
+
   const [team, setTeam] = useState<
     TeamMemberProgress[]
   >([]);
@@ -284,7 +287,7 @@ export default function CompanyPerformancePage() {
                 <p className="text-sm text-[var(--usus-text-muted)]">
                   No trainees yet.{" "}
                   <Link
-                    href="/company-admin/trainees"
+                    href={area.trainees}
                     className="font-medium text-[var(--usus-text)] hover:text-[var(--usus-primary)]"
                   >
                     Add trainees
@@ -295,7 +298,7 @@ export default function CompanyPerformancePage() {
               sortedTeam.map((member) => (
                 <Link
                   key={member.user_id}
-                  href={`/company-admin/performance/${member.user_id}`}
+                  href={`${area.performance}/${member.user_id}`}
                   className="grid gap-2 border-b border-[var(--usus-border)] px-6 py-4 text-sm transition-colors last:border-b-0 hover:bg-[var(--usus-surface-soft)] md:grid-cols-[2fr_1fr_1fr_1fr_1fr] md:items-center md:gap-4"
                 >
                   <div className="min-w-0">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useStaffArea } from "@/hooks/use-staff-area";
 import {
   useCallback,
   useEffect,
@@ -24,6 +25,8 @@ const rowActionClassName =
 type View = "active" | "archived";
 
 export default function CompanyTrainingPage() {
+  const area = useStaffArea();
+
   const [scenarios, setScenarios] = useState<
     ManagedScenario[]
   >([]);
@@ -167,7 +170,7 @@ export default function CompanyTrainingPage() {
             </div>
 
             <Link
-              href="/company-admin/training/new"
+              href={`${area.training}/new`}
               className="w-fit rounded-lg bg-[var(--usus-primary)] px-4 py-2 text-xs font-medium text-[#111111] transition-colors hover:bg-[var(--usus-primary-hover)]"
             >
               New Scenario
@@ -225,7 +228,7 @@ export default function CompanyTrainingPage() {
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`/company-admin/training/${scenario.id}`}
+                      href={`${area.training}/${scenario.id}`}
                       className="block truncate font-medium text-[var(--usus-text)] transition-colors hover:text-[var(--usus-primary)]"
                     >
                       {scenario.name}
@@ -263,7 +266,7 @@ export default function CompanyTrainingPage() {
 
                   <div className="flex flex-wrap gap-4 md:justify-end">
                     <Link
-                      href={`/company-admin/training/${scenario.id}`}
+                      href={`${area.training}/${scenario.id}`}
                       className={rowActionClassName}
                     >
                       Edit
