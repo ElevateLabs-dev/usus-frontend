@@ -16,6 +16,8 @@ import {
   logout as clearAuth,
 } from "@/services/auth-service";
 
+import { getMyProfile } from "@/services/profile-service";
+
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
@@ -49,6 +51,29 @@ export function AuthProvider({
     };
 
     restoreAuthentication();
+
+    /*
+     * The token keeps the role the user had when
+     * they signed in, but the backend always uses
+     * the current one. If it has changed since,
+     * sign in again so the app shows the right pages.
+     */
+    const signedIn = getAuthUser();
+
+    if (signedIn) {
+      getMyProfile()
+        .then((profile) => {
+          if (profile.role !== signedIn.role) {
+            clearAuth();
+            window.location.replace(
+              "/login?reason=role-changed",
+            );
+          }
+        })
+        .catch(() => {
+          // Handled by the API client (401) or the page.
+        });
+    }
 
     const handleAuthChange = () => {
       const authenticatedUser =

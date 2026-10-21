@@ -1,3 +1,5 @@
+import { logout } from "@/services/auth-service";
+
 const API_URL = "/api/backend";
 
 export async function apiClient<T>(
@@ -31,6 +33,15 @@ export async function apiClient<T>(
       headers,
     },
   );
+
+  /*
+   * The token expired or the account was
+   * deactivated: sign out and start again.
+   */
+  if (response.status === 401 && token) {
+    logout();
+    window.location.replace("/login");
+  }
 
   if (!response.ok) {
     let errorMessage =

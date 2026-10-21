@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { AuthCard } from "@/components/auth/auth-card";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { LoginForm } from "@/components/auth/login-form";
@@ -10,7 +12,9 @@ export default function LoginPage() {
         description="Login to your account to continue"
       />
 
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </AuthCard>
   );
 };
