@@ -139,3 +139,51 @@ export async function getSimulationHealth(): Promise<{
     domain: string;
   }>("/simulations/health");
 }
+/*
+ * ============================================================
+ * VOICE (Vapi)
+ * ============================================================
+ */
+
+/** Public Vapi key; voice role-play is hidden without it. */
+export const VAPI_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY ?? "";
+
+export const voiceAvailable =
+  VAPI_PUBLIC_KEY.length > 0;
+
+/**
+ * Create the AI customer for a voice call.
+ * Pass the returned id to vapi.start().
+ */
+export async function startVoiceCall(
+  sessionId: string,
+): Promise<string> {
+  const data = await apiClient<{
+    assistant_id: string;
+  }>(`/simulations/${sessionId}/voice`, {
+    method: "POST",
+  });
+
+  return data.assistant_id;
+}
+
+/**
+ * End a voice session: the backend saves the
+ * call's transcript and starts the evaluation,
+ * like endSimulation(). Can take a few seconds.
+ */
+export async function endVoiceSimulation(
+  sessionId: string,
+  callId: string,
+): Promise<SimulationSession> {
+  return apiClient<SimulationSession>(
+    `/simulations/${sessionId}/voice/end`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        call_id: callId,
+      }),
+    },
+  );
+}
