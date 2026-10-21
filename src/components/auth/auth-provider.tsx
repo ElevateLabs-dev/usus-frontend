@@ -82,15 +82,45 @@ export function AuthProvider({
       setUser(authenticatedUser);
     };
 
+    /*
+     * Signing in or out in another tab changes
+     * the shared token: follow it, so this tab
+     * never sends requests without one.
+     */
+    const handleStorage = (
+      event: StorageEvent,
+    ) => {
+      if (event.key !== "usus_access_token") {
+        return;
+      }
+
+      if (!event.newValue) {
+        window.location.replace("/login");
+        return;
+      }
+
+      window.location.reload();
+    };
+
     window.addEventListener(
       "usus-auth-change",
       handleAuthChange,
+    );
+
+    window.addEventListener(
+      "storage",
+      handleStorage,
     );
 
     return () => {
       window.removeEventListener(
         "usus-auth-change",
         handleAuthChange,
+      );
+
+      window.removeEventListener(
+        "storage",
+        handleStorage,
       );
     };
   }, []);

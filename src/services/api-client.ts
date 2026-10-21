@@ -2,6 +2,23 @@ import { logout } from "@/services/auth-service";
 
 const API_URL = "/api/backend";
 
+/**
+ * A readable message for errors that have no
+ * JSON detail (timeouts, crashes, the free
+ * server waking up).
+ */
+function fallbackMessage(status: number) {
+  if (status === 502 || status === 503 || status === 504) {
+    return "The server took too long to respond. Refresh the page to check whether your change was saved before trying again.";
+  }
+
+  if (status >= 500) {
+    return "Something went wrong on the server. Refresh the page to check whether your change was saved before trying again.";
+  }
+
+  return "Something went wrong.";
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -35,17 +52,22 @@ export async function apiClient<T>(
   );
 
   /*
-   * The token expired or the account was
-   * deactivated: sign out and start again.
+   * No valid sign-in (expired, deactivated, or
+   * signed out in another tab): start again.
    */
-  if (response.status === 401 && token) {
+  if (response.status === 401) {
     logout();
     window.location.replace("/login");
+
+    throw new Error(
+      "Your session has ended. Please sign in again.",
+    );
   }
 
   if (!response.ok) {
-    let errorMessage =
-      "Something went wrong.";
+    let errorMessage = fallbackMessage(
+      response.status,
+    );
 
     try {
       const errorData =
