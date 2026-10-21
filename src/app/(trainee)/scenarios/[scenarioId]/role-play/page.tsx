@@ -3,6 +3,7 @@
 import {
   use,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -18,7 +19,12 @@ import {
   startSimulation,
   sendSimulationMessage,
   endSimulation,
+  endVoiceSimulation,
+  startVoiceCall,
+  voiceAvailable,
 } from "@/services/simulation-service";
+
+import { useVapiCall } from "@/hooks/use-vapi-call";
 
 import type {
   ConversationMessage,
@@ -30,10 +36,14 @@ import { SessionStatus } from "@/components/role-play/session-status";
 import { CustomerPanel } from "@/components/role-play/customer-panel";
 import { ConversationWindow } from "@/components/role-play/conversation-window";
 import { EndSessionDialog } from "@/components/role-play/end-session-dialog";
+import { VoiceCall } from "@/components/role-play/voice-call";
 
 interface RolePlayPageProps {
   params: Promise<{
     scenarioId: string;
+  }>;
+  searchParams: Promise<{
+    mode?: string;
   }>;
 }
 
@@ -117,10 +127,16 @@ function mapBackendMessage(
 
 export default function RolePlayPage({
   params,
+  searchParams,
 }: RolePlayPageProps) {
   const router = useRouter();
 
   const { scenarioId } = use(params);
+
+  const { mode } = use(searchParams);
+
+  const isVoice =
+    mode === "voice" && voiceAvailable;
 
   /*
    * ============================================================
@@ -172,6 +188,47 @@ export default function RolePlayPage({
 
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+
+  // Guards against ending twice (hang-up and the
+  // call-end event both end the session).
+  const endingRef = useRef(false);
+
+  /*
+   * ============================================================
+   * VOICE CALL
+   * ============================================================
+   */
+
+  const call = useVapiCall(() => {
+    void handleEndSession();
+  });
+
+  const [startingCall, setStartingCall] =
+    useState(false);
+
+  async function handleStartCall() {
+    if (!sessionId || startingCall) {
+      return;
+    }
+
+    setStartingCall(true);
+    setSessionError("");
+
+    try {
+      const assistantId =
+        await startVoiceCall(sessionId);
+
+      await call.start(assistantId);
+    } catch (error) {
+      setSessionError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start the call.",
+      );
+    } finally {
+      setStartingCall(false);
+    }
+  }
 
   /*
    * ============================================================
@@ -395,10 +452,12 @@ export default function RolePlayPage({
     if (
       !scenario ||
       !sessionId ||
-      isSubmitting
+      endingRef.current
     ) {
       return;
     }
+
+    endingRef.current = true;
 
     const currentScenarioId =
       scenario.id;
@@ -409,7 +468,22 @@ export default function RolePlayPage({
     setSessionError("");
 
     try {
-      await endSimulation(sessionId);
+      const callId = isVoice
+        ? call.callId()
+        : null;
+
+      if (isVoice) {
+        await call.stop();
+      }
+
+      if (callId) {
+        await endVoiceSimulation(
+          sessionId,
+          callId,
+        );
+      } else {
+        await endSimulation(sessionId);
+      }
 
       router.push(
         `/scenarios/${currentScenarioId}/evaluation?sessionId=${encodeURIComponent(
@@ -422,6 +496,7 @@ export default function RolePlayPage({
         error,
       );
 
+      endingRef.current = false;
       setIsSubmitting(false);
       setStatus("error");
 
@@ -613,7 +688,7 @@ export default function RolePlayPage({
         </div>
 
         {sessionError &&
-          status === "error" && (
+          (status === "error" || isVoice) && (
             <div
               role="alert"
               className="
@@ -654,14 +729,33 @@ export default function RolePlayPage({
             }
           />
 
-          <ConversationWindow
-            messages={messages}
-            customerName={
-              scenario.customer.name
-            }
-            status={status}
-            onSend={handleSendMessage}
-          />
+          {isVoice ? (
+            <VoiceCall
+              customerName={
+                scenario.customer.name
+              }
+              state={call.state}
+              error={call.error}
+              muted={call.muted}
+              customerSpeaking={
+                call.customerSpeaking
+              }
+              transcript={call.transcript}
+              starting={startingCall}
+              onStart={handleStartCall}
+              onToggleMute={call.toggleMute}
+              onHangUp={handleEndSession}
+            />
+          ) : (
+            <ConversationWindow
+              messages={messages}
+              customerName={
+                scenario.customer.name
+              }
+              status={status}
+              onSend={handleSendMessage}
+            />
+          )}
         </section>
       </main>
 
