@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useStaffArea } from "@/hooks/use-staff-area";
 import { useRouter } from "next/navigation";
 
 import {
@@ -11,6 +12,8 @@ import {
 import { createScenario } from "@/services/training-service";
 
 export default function NewScenarioPage() {
+  const area = useStaffArea();
+
   const router = useRouter();
 
   return (
@@ -18,7 +21,7 @@ export default function NewScenarioPage() {
       <section className="px-6 py-8 md:px-8 md:py-10">
         <div className="mx-auto max-w-4xl">
           <Link
-            href="/company-admin/training"
+            href={area.training}
             className="text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:text-[var(--usus-primary)]"
           >
             ← Back to Training
@@ -45,7 +48,7 @@ export default function NewScenarioPage() {
             submitLabel="Create scenario"
             onSubmit={async (input) => {
               await createScenario(input);
-              router.push("/company-admin/training");
+              router.push(area.training);
             }}
           />
         </div>

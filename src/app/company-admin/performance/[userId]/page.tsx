@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useStaffArea } from "@/hooks/use-staff-area";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -29,6 +30,8 @@ function score(value: number | null) {
 }
 
 export default function TraineePerformancePage() {
+  const area = useStaffArea();
+
   const { userId } = useParams<{
     userId: string;
   }>();
@@ -88,7 +91,7 @@ export default function TraineePerformancePage() {
         <div className="mx-auto max-w-7xl space-y-8">
           <div>
             <Link
-              href="/company-admin/performance"
+              href={area.performance}
               className="text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:text-[var(--usus-primary)]"
             >
               ← Back to Performance

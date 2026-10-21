@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useStaffArea } from "@/hooks/use-staff-area";
 import {
   useParams,
   useRouter,
@@ -52,6 +53,8 @@ function toInput(
 }
 
 export default function EditScenarioPage() {
+  const area = useStaffArea();
+
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -89,7 +92,7 @@ export default function EditScenarioPage() {
       <section className="px-6 py-8 md:px-8 md:py-10">
         <div className="mx-auto max-w-4xl">
           <Link
-            href="/company-admin/training"
+            href={area.training}
             className="text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:text-[var(--usus-primary)]"
           >
             ← Back to Training
@@ -135,7 +138,7 @@ export default function EditScenarioPage() {
               onSubmit={async (input) => {
                 await updateScenario(id, input);
                 router.push(
-                  "/company-admin/training",
+                  area.training,
                 );
               }}
             />

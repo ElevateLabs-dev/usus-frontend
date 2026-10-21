@@ -3,21 +3,26 @@
 import Link from "next/link";
 
 import { RoleNavigation } from "@/components/navigation/role-navigation";
+import { useStaffArea } from "@/hooks/use-staff-area";
 
 export function CompanyAdminSidebar() {
+  const area = useStaffArea();
+
   return (
     <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-[var(--usus-header-border)] bg-[var(--usus-sidebar)] md:flex">
       {/* Brand */}
       <div className="flex h-[72px] flex-col justify-center border-b border-[var(--usus-header-border)] px-6">
         <Link
-          href="/company-admin"
+          href={area.base}
           className="text-xl font-semibold tracking-tight text-[var(--usus-text)] transition-colors hover:text-[var(--usus-primary)]"
         >
           USUS
         </Link>
 
         <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
-          Company Administration
+          {area.isManager
+            ? "Team Management"
+            : "Company Administration"}
         </p>
       </div>
 
@@ -33,11 +38,13 @@ export function CompanyAdminSidebar() {
       {/* Bottom */}
       <div className="border-t border-[var(--usus-header-border)] px-4 py-4">
         <p className="px-3 text-[10px] font-medium text-[var(--usus-text-muted)]">
-          Company Admin
+          {area.isManager ? "Manager" : "Company Admin"}
         </p>
 
         <p className="mt-1 px-3 text-[10px] text-[var(--usus-text-muted)]">
-          Organisation Management
+          {area.isManager
+            ? "Team Management"
+            : "Organisation Management"}
         </p>
       </div>
     </aside>
