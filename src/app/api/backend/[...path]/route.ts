@@ -7,6 +7,14 @@ import { NextRequest, NextResponse } from "next/server";
  * platform), for example:
  * https://usus-api-utc7.onrender.com/api/v1
  */
+/*
+ * Give the backend time to wake up: the free
+ * Render instance can take up to a minute after
+ * sleeping. Without this, the host may cut the
+ * request off while the backend still finishes it.
+ */
+export const maxDuration = 60;
+
 const BACKEND_URL =
   process.env.BACKEND_URL ??
   "http://127.0.0.1:8000/api/v1";
@@ -80,7 +88,23 @@ async function proxyRequest(
       redirect: "manual",
     });
 
-  let response = await send(targetUrl);
+  let response: Response;
+
+  try {
+    response = await send(targetUrl);
+  } catch {
+    /*
+     * The backend is unreachable, e.g. the free
+     * Render instance is still waking up.
+     */
+    return NextResponse.json(
+      {
+        detail:
+          "The server is starting up. Please try again in a minute.",
+      },
+      { status: 503 },
+    );
+  }
 
   /*
    * FastAPI redirects "/users" to "/users/"
