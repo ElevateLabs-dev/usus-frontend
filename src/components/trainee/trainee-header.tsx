@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { UsusLogo } from "@/components/brand/usus-logo";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 import {
   logout,
@@ -127,6 +128,8 @@ export function TraineeHeader({
               sm:gap-5
             "
           >
+
+            <NotificationBell />
 
             {/* ===================================================
                 THEME TOGGLE

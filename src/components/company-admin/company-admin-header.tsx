@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth/auth-provider";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useStaffArea } from "@/hooks/use-staff-area";
 
@@ -27,6 +28,8 @@ export function CompanyAdminHeader() {
 
       {/* Right */}
       <div className="flex items-center gap-3 px-6">
+        <NotificationBell />
+
         <ThemeToggle />
 
         <div className="h-7 w-px bg-[var(--usus-border)]" />
