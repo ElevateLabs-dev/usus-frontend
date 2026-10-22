@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Play } from "lucide-react";
+import { ArrowLeft, Clock, Phone, Play } from "lucide-react";
 
 import { getScenarioBrief } from "@/services/scenario-service";
+import { voiceAvailable } from "@/services/simulation-service";
 
 import type { ScenarioBrief } from "@/types/scenario-brief";
 
@@ -124,6 +125,12 @@ export default function ScenarioBriefPage({
   function startSimulation() {
     router.push(
       `/scenarios/${currentScenarioId}/role-play`
+    );
+  }
+
+  function startVoiceSimulation() {
+    router.push(
+      `/scenarios/${currentScenarioId}/role-play?mode=voice`
     );
   }
 
@@ -498,8 +505,22 @@ export default function ScenarioBriefPage({
                 "
               >
                 <Play size={17} fill="currentColor" />
-                Start Simulation
+                {voiceAvailable
+                  ? "Start Text Simulation"
+                  : "Start Simulation"}
               </button>
+
+              {voiceAvailable && (
+                <button
+                  type="button"
+                  disabled={!scenario.canStart}
+                  onClick={startVoiceSimulation}
+                  className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--usus-primary)] px-5 py-3.5 text-sm font-bold text-[var(--usus-text)] transition-all duration-200 hover:bg-[var(--usus-primary-soft)] focus:outline-none focus:ring-2 focus:ring-[var(--usus-primary)] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Phone size={17} />
+                  Start Voice Call
+                </button>
+              )}
 
               <p className="mt-3 text-center text-[11px] leading-5 text-[var(--usus-text-muted)]">
                 Make sure you understand the situation before
