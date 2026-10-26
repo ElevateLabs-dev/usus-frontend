@@ -1,4 +1,7 @@
-import { apiClient } from "@/services/api-client";
+import {
+  ApiError,
+  apiClient,
+} from "@/services/api-client";
 import type {
   EvaluationData,
   EvaluationInsight,
@@ -52,7 +55,12 @@ async function waitForEvaluation(
         error.message ===
           EVALUATION_PENDING_MESSAGE;
 
-      if (!stillGenerating) {
+      // The server waking up or busy: keep waiting.
+      const temporary =
+        error instanceof ApiError &&
+        [502, 503, 504].includes(error.status);
+
+      if (!stillGenerating && !temporary) {
         throw error;
       }
 
