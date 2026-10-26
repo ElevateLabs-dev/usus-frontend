@@ -163,7 +163,7 @@ export default function RolePlayPage({
     useState<string | null>(null);
 
   const [startingSession, setStartingSession] =
-    useState(true);
+    useState(false);
 
   const [sessionError, setSessionError] =
     useState("");
@@ -207,7 +207,7 @@ export default function RolePlayPage({
     useState(false);
 
   async function handleStartCall() {
-    if (!sessionId || startingCall) {
+    if (startingCall) {
       return;
     }
 
@@ -215,8 +215,15 @@ export default function RolePlayPage({
     setSessionError("");
 
     try {
+      const currentSessionId =
+        await ensureSession();
+
+      if (!currentSessionId) {
+        return;
+      }
+
       const assistantId =
-        await startVoiceCall(sessionId);
+        await startVoiceCall(currentSessionId);
 
       await call.start(assistantId);
     } catch (error) {
@@ -282,59 +289,44 @@ export default function RolePlayPage({
    * ============================================================
    * START REAL SIMULATION
    * ============================================================
+   *
+   * Only when the trainee sends their first message or starts
+   * the call, so opening this page does not leave an empty
+   * session in their history.
    */
 
-  useEffect(() => {
+  async function ensureSession(): Promise<string | null> {
+    if (sessionId) {
+      return sessionId;
+    }
+
     if (!scenario) {
-      return;
+      return null;
     }
 
-    const currentScenarioId =
-      scenario.id;
+    setStartingSession(true);
+    setSessionError("");
 
-    let cancelled = false;
+    try {
+      const session = await startSimulation(
+        scenario.id,
+      );
 
-    async function createRealSession() {
-      try {
-        setStartingSession(true);
-        setSessionError("");
+      setSessionId(session.id);
+      return session.id;
+    } catch (error) {
+      setSessionError(
+        error instanceof Error
+          ? error.message
+          : "Unable to start simulation.",
+      );
 
-        const session =
-          await startSimulation(
-            currentScenarioId,
-          );
-
-        if (cancelled) {
-          return;
-        }
-
-        setSessionId(session.id);
-        setStatus("ready");
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        setSessionError(
-          error instanceof Error
-            ? error.message
-            : "Unable to start simulation.",
-        );
-
-        setStatus("error");
-      } finally {
-        if (!cancelled) {
-          setStartingSession(false);
-        }
-      }
+      setStatus("error");
+      return null;
+    } finally {
+      setStartingSession(false);
     }
-
-    createRealSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [scenario]);
+  }
 
   /*
    * ============================================================
@@ -373,7 +365,7 @@ export default function RolePlayPage({
     content: string,
   ) {
     if (
-      !sessionId ||
+      startingSession ||
       status === "sending" ||
       status ===
         "customer-responding" ||
@@ -406,10 +398,24 @@ export default function RolePlayPage({
     setStatus("customer-responding");
     setSessionError("");
 
+    const currentSessionId =
+      await ensureSession();
+
+    if (!currentSessionId) {
+      // Not sent: take the message back off the screen.
+      setMessages((current) =>
+        current.filter(
+          (message) =>
+            message.id !== traineeMessage.id,
+        ),
+      );
+      return;
+    }
+
     try {
       const response =
         await sendSimulationMessage(
-          sessionId,
+          currentSessionId,
           content,
         );
 
@@ -449,11 +455,14 @@ export default function RolePlayPage({
    */
 
   async function handleEndSession() {
-    if (
-      !scenario ||
-      !sessionId ||
-      endingRef.current
-    ) {
+    if (!scenario || endingRef.current) {
+      return;
+    }
+
+    // Nothing was said yet, so there is nothing to end or evaluate.
+    if (!sessionId) {
+      setShowEndDialog(false);
+      router.push(`/scenarios/${scenario.id}`);
       return;
     }
 
@@ -563,80 +572,6 @@ export default function RolePlayPage({
               transition-all
               hover:brightness-95
               hover:shadow-md
-            "
-          >
-            Back to scenarios
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  /*
-   * ============================================================
-   * STARTING SESSION
-   * ============================================================
-   */
-
-  if (startingSession) {
-    return (
-      <main className="min-h-full bg-[var(--usus-background)]">
-        <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8">
-          <div
-            className="
-              mx-auto
-              h-8
-              w-8
-              animate-spin
-              rounded-full
-              border-2
-              border-[var(--usus-border)]
-              border-t-[var(--usus-primary)]
-            "
-          />
-
-          <p className="mt-4 text-sm text-[var(--usus-text-muted)]">
-            Starting your simulation...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  /*
-   * ============================================================
-   * SESSION ERROR
-   * ============================================================
-   */
-
-  if (!sessionId) {
-    return (
-      <main className="min-h-full bg-[var(--usus-background)]">
-        <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8">
-          <h1 className="text-2xl font-bold text-[var(--usus-text)]">
-            Unable to start simulation
-          </h1>
-
-          <p className="mt-2 text-sm text-[var(--usus-text-muted)]">
-            {sessionError ||
-              "A simulation session could not be created."}
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push("/scenarios")
-            }
-            className="
-              mt-6
-              cursor-pointer
-              rounded-xl
-              bg-[var(--usus-primary)]
-              px-5
-              py-3
-              text-sm
-              font-semibold
-              text-[#111111]
             "
           >
             Back to scenarios
