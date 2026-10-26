@@ -11,6 +11,8 @@ export interface LearningLevelProgress {
   total: number;
   percentage: number;
   status: "locked" | "current" | "completed";
+  /** What to do to unlock a locked level. */
+  lockedReason: string | null;
 }
 
 export interface TrainingCategory {

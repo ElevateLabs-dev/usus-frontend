@@ -523,8 +523,8 @@ export default function ScenarioBriefPage({
               )}
 
               <p className="mt-3 text-center text-[11px] leading-5 text-[var(--usus-text-muted)]">
-                Make sure you understand the situation before
-                starting the simulation.
+                {scenario.lockedReason ??
+                  "Make sure you understand the situation before starting the simulation."}
               </p>
             </section>
           </aside>

@@ -82,11 +82,10 @@ export async function getLearningPath(): Promise<LearningPathData> {
     scenarios.filter(isCompleted).length;
 
   /*
-   * The first level that still has
-   * scenarios to complete is "current";
-   * the ones after it are "locked".
+   * The backend decides which levels are
+   * locked (a level unlocks once every
+   * scenario of the level before is passed).
    */
-  let currentFound = false;
 
   const levels: LearningLevelProgress[] =
     LEVELS.map((level) => {
@@ -102,15 +101,18 @@ export async function getLearningPath(): Promise<LearningPathData> {
         inLevel.length > 0 &&
         completed === inLevel.length;
 
+      const lockedScenario = inLevel.find(
+        (scenario) => scenario.locked,
+      );
+
       let status: LearningLevelProgress["status"];
 
       if (done) {
         status = "completed";
-      } else if (!currentFound) {
-        status = "current";
-        currentFound = true;
-      } else {
+      } else if (lockedScenario) {
         status = "locked";
+      } else {
+        status = "current";
       }
 
       return {
@@ -124,6 +126,8 @@ export async function getLearningPath(): Promise<LearningPathData> {
           inLevel.length,
         ),
         status,
+        lockedReason:
+          lockedScenario?.locked_reason ?? null,
       };
     });
 
