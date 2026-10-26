@@ -39,4 +39,7 @@ export interface ScenarioBrief {
   attempts: number;
 
   canStart: boolean;
+
+  /** Why the scenario cannot be started yet. */
+  lockedReason: string | null;
 };

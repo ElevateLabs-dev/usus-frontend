@@ -50,6 +50,10 @@ export interface BackendScenario {
   skills: BackendScenarioSkill[];
   estimated_minutes: number;
   progress: BackendScenarioProgress;
+  /** The trainee has not unlocked this level yet. */
+  locked: boolean;
+  /** What to do to unlock it. */
+  locked_reason: string | null;
 }
 
 /**
@@ -205,6 +209,8 @@ export async function getScenarioBrief(
     attempts:
       scenario.progress.attempts,
 
-    canStart: true,
+    canStart: !scenario.locked,
+
+    lockedReason: scenario.locked_reason,
   };
 }

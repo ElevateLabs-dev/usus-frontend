@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { getLearningPath } from "@/services/learning-path-service";
 
@@ -403,12 +404,7 @@ export default function LearningPathPage() {
                 const isComplete = level.status === "completed";
                 const isLocked = level.status === "locked";
 
-                return (
-                  <button
-                    key={level.id}
-                    type="button"
-                    disabled={isLocked}
-                    className={`
+                const cardClassName = `
                       group
                       relative
                       w-full
@@ -429,8 +425,10 @@ export default function LearningPathPage() {
                           ? "cursor-not-allowed opacity-60"
                           : "cursor-pointer hover:-translate-y-1 hover:border-[var(--usus-primary)] hover:shadow-lg"
                       }
-                    `}
-                  >
+                    `;
+
+                const content = (
+                  <>
                     <div className="relative z-10 flex items-center justify-between">
 
                       <span
@@ -512,10 +510,33 @@ export default function LearningPathPage() {
 
                     <div className="mt-5 text-sm font-semibold text-[var(--usus-text)] transition-colors group-hover:text-[var(--usus-primary-hover)]">
                       {isLocked
-                        ? "Complete previous level"
+                        ? level.lockedReason ??
+                          "Complete the previous level"
                         : "Explore level →"}
                     </div>
-                  </button>
+                  </>
+                );
+
+                /*
+                 * An open level opens the scenarios
+                 * page filtered to that level.
+                 */
+                return isLocked ? (
+                  <div
+                    key={level.id}
+                    aria-disabled="true"
+                    className={cardClassName}
+                  >
+                    {content}
+                  </div>
+                ) : (
+                  <Link
+                    key={level.id}
+                    href={`/scenarios?difficulty=${level.id}`}
+                    className={cardClassName}
+                  >
+                    {content}
+                  </Link>
                 );
               })}
             </div>

@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 
 import Link from "next/link";
 
+import { SessionTranscript } from "@/components/history/session-transcript";
 import { getHistorySession } from "@/services/history";
 
 import type { HistorySession } from "@/types/history";
@@ -25,25 +26,46 @@ export default function HistoryReviewPage({
   const [loading, setLoading] =
     useState(true);
 
+  const [error, setError] = useState("");
+
+  // Bumped by "Try again" to reload.
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function loadSession() {
-      const data =
-        await getHistorySession(sessionId);
-
-      if (!cancelled) {
-        setSession(data);
-        setLoading(false);
-      }
-    }
-
-    loadSession();
+    getHistorySession(sessionId)
+      .then((data) => {
+        if (!cancelled) {
+          setSession(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load this session.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, attempt]);
+
+  function retry() {
+    setLoading(true);
+    setError("");
+    setAttempt((current) => current + 1);
+  }
 
   if (loading) {
     return (
@@ -65,6 +87,48 @@ export default function HistoryReviewPage({
           <p className="text-sm text-[var(--usus-text-muted)]">
             Loading session...
           </p>
+        </div>
+      </main>
+    );
+  }
+
+  /*
+   * ============================================================
+   * LOAD ERROR
+   * ============================================================
+   */
+
+  if (error) {
+    return (
+      <main className="min-h-full bg-[var(--usus-background)]">
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold text-[var(--usus-text)]">
+            Could not load this session
+          </h1>
+
+          <p
+            role="alert"
+            className="mt-2 text-sm text-[var(--usus-text-muted)]"
+          >
+            {error}
+          </p>
+
+          <div className="mt-6 flex justify-center gap-3">
+            <button
+              type="button"
+              onClick={retry}
+              className="cursor-pointer rounded-xl bg-[var(--usus-primary)] px-5 py-3 text-sm font-semibold text-black transition hover:bg-[var(--usus-primary-hover)]"
+            >
+              Try again
+            </button>
+
+            <Link
+              href="/history"
+              className="rounded-xl border border-[var(--usus-border)] bg-[var(--usus-surface)] px-5 py-3 text-sm font-medium text-[var(--usus-text)] transition hover:border-[var(--usus-primary)]"
+            >
+              Back to history
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -354,6 +418,14 @@ export default function HistoryReviewPage({
             ))}
           </div>
         </section>
+
+        {/* ====================================================
+            CONVERSATION
+        ==================================================== */}
+
+        <SessionTranscript
+          messages={session.transcript}
+        />
 
         {/* ====================================================
             SESSION INFORMATION

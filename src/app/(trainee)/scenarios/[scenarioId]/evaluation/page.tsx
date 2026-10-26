@@ -6,6 +6,9 @@ import { useParams, useSearchParams } from "next/navigation";
 import type { EvaluationData } from "@/types/evaluation";
 
 import { getEvaluation } from "@/services/evaluation-service";
+import { getHistorySession } from "@/services/history";
+import type { TranscriptMessage } from "@/types/history";
+import { SessionTranscript } from "@/components/history/session-transcript";
 
 import { EvaluationHeader } from "@/components/evaluation/evaluation-header";
 import { OverallScore } from "@/components/evaluation/overall-score";
@@ -35,6 +38,45 @@ export default function EvaluationPage() {
 
   const [error, setError] =
     useState<string | null>(null);
+
+  const [transcript, setTranscript] =
+    useState<TranscriptMessage[] | null>(null);
+
+  const [transcriptError, setTranscriptError] =
+    useState("");
+
+  /*
+   * The conversation, loaded once the
+   * evaluation is ready.
+   */
+  const evaluatedSessionId =
+    evaluation?.sessionId ?? null;
+
+  useEffect(() => {
+    if (!evaluatedSessionId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    getHistorySession(evaluatedSessionId)
+      .then((session) => {
+        if (!cancelled) {
+          setTranscript(session?.transcript ?? []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTranscriptError(
+            "The conversation could not be loaded. You can find it later in History.",
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [evaluatedSessionId]);
 
   /*
    * ============================================================
@@ -343,6 +385,25 @@ export default function EvaluationPage() {
               evaluation.recommendations
             }
           />
+
+          {/* ==================================================
+              CONVERSATION
+          ================================================== */}
+
+          {transcript && (
+            <SessionTranscript
+              messages={transcript}
+            />
+          )}
+
+          {transcriptError && (
+            <p
+              role="alert"
+              className="rounded-xl border border-[var(--usus-border)] bg-[var(--usus-surface)] px-4 py-3 text-sm text-[var(--usus-text-muted)]"
+            >
+              {transcriptError}
+            </p>
+          )}
 
           {/* ==================================================
               ACTIONS

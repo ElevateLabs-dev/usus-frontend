@@ -1,4 +1,7 @@
-import { apiClient } from "@/services/api-client";
+import {
+  ApiError,
+  apiClient,
+} from "@/services/api-client";
 import type { BackendEvaluation } from "@/services/simulation-service";
 
 import type {
@@ -48,9 +51,16 @@ interface BackendHistoryPage {
   total: number;
 }
 
+interface BackendMessage {
+  role: "user" | "model" | "system";
+  content: string;
+  created_at: string;
+}
+
 interface BackendSessionDetail
   extends BackendHistoryItem {
   evaluation: BackendEvaluation | null;
+  messages: BackendMessage[];
 }
 
 /*
@@ -86,6 +96,7 @@ function mapStatus(
 function mapSession(
   item: BackendHistoryItem,
   evaluation: BackendEvaluation | null = null,
+  messages: BackendMessage[] = [],
 ): HistorySession {
   return {
     sessionId: item.id,
@@ -127,6 +138,18 @@ function mapSession(
       name: dimension.dimension_name,
       score: dimension.score,
     })),
+
+    transcript: messages
+      .filter((message) => message.role !== "system")
+      .map((message, index) => ({
+        id: `${item.id}-${index}`,
+        speaker:
+          message.role === "user"
+            ? "trainee"
+            : "customer",
+        content: message.content,
+        createdAt: message.created_at,
+      })),
   };
 }
 
@@ -282,8 +305,12 @@ export async function getHistory(
 
 /**
  * Get one training session by ID
- * from GET /simulations/{id},
- * including its skill scores.
+ * from GET /simulations/{id}, with its
+ * skill scores and transcript.
+ *
+ * Returns null if the session does not
+ * exist; other errors are thrown so the
+ * page can offer to try again.
  */
 export async function getHistorySession(
   sessionId: string,
@@ -297,8 +324,16 @@ export async function getHistorySession(
     return mapSession(
       detail,
       detail.evaluation,
+      detail.messages,
     );
-  } catch {
-    return null;
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 404
+    ) {
+      return null;
+    }
+
+    throw error;
   }
 }

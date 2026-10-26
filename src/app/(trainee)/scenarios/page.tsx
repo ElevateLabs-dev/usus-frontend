@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -11,6 +13,7 @@ import {
 
 import {
   ChevronDown,
+  Lock,
   Search,
   SlidersHorizontal,
   X,
@@ -59,7 +62,49 @@ const personas: Persona[] = [
   "angry",
 ];
 
+/*
+ * useSearchParams needs a Suspense boundary.
+ */
 export default function ScenarioBrowserPage() {
+  return (
+    <Suspense>
+      <ScenarioBrowserFromUrl />
+    </Suspense>
+  );
+}
+
+/*
+ * ?difficulty=beginner (from the learning
+ * path) opens the page filtered to that level.
+ */
+function ScenarioBrowserFromUrl() {
+  const level = useSearchParams().get("difficulty");
+
+  return (
+    <ScenarioBrowser
+      key={level ?? "all"}
+      initialDifficulty={
+        isDifficulty(level) ? level : "all"
+      }
+    />
+  );
+}
+
+function isDifficulty(
+  value: string | null,
+): value is BackendScenario["difficulty"] {
+  return (
+    value === "beginner" ||
+    value === "intermediate" ||
+    value === "advanced"
+  );
+}
+
+function ScenarioBrowser({
+  initialDifficulty,
+}: {
+  initialDifficulty: Difficulty;
+}) {
   /* =====================================================
      AUTH
   ===================================================== */
@@ -91,7 +136,7 @@ export default function ScenarioBrowserPage() {
     useState("");
 
   const [difficulty, setDifficulty] =
-    useState<Difficulty>("all");
+    useState<Difficulty>(initialDifficulty);
 
   const [persona, setPersona] =
     useState<Persona>("all");
@@ -1389,6 +1434,20 @@ function ScenarioCard({
 
       {/* Action */}
       <div className="mt-auto pt-6">
+        {scenario.locked ? (
+          <div>
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--usus-muted)] px-4 py-3 text-sm font-semibold text-[var(--usus-text-muted)]">
+              <Lock size={15} />
+              Locked
+            </div>
+
+            {scenario.locked_reason && (
+              <p className="mt-2 text-center text-[11px] leading-5 text-[var(--usus-text-muted)]">
+                {scenario.locked_reason}
+              </p>
+            )}
+          </div>
+        ) : (
         <Link
           href={`/scenarios/${scenario.id}`}
           className="
@@ -1416,6 +1475,7 @@ function ScenarioCard({
         >
           Start scenario →
         </Link>
+        )}
       </div>
     </article>
   );
