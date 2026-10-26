@@ -23,6 +23,17 @@ export interface HistorySkill {
 }
 
 // ============================================================
+// TRANSCRIPT
+// ============================================================
+
+export interface TranscriptMessage {
+  id: string;
+  speaker: "trainee" | "customer";
+  content: string;
+  createdAt: string;
+}
+
+// ============================================================
 // PERFORMANCE TREND
 // ============================================================
 
@@ -74,6 +85,12 @@ export interface HistorySession {
    * Skills evaluated during the session.
    */
   skills: HistorySkill[];
+
+  /**
+   * The conversation (text or voice); only
+   * filled in for a single session.
+   */
+  transcript: TranscriptMessage[];
 }
 
 // ============================================================

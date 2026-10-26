@@ -2,6 +2,17 @@ import { logout } from "@/services/auth-service";
 
 const API_URL = "/api/backend";
 
+/** An API error with the HTTP status, so pages can tell e.g. 404 apart. */
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 /**
  * A readable message for errors that have no
  * JSON detail (timeouts, crashes, the free
@@ -59,8 +70,9 @@ export async function apiClient<T>(
     logout();
     window.location.replace("/login");
 
-    throw new Error(
+    throw new ApiError(
       "Your session has ended. Please sign in again.",
+      401,
     );
   }
 
@@ -97,7 +109,10 @@ export async function apiClient<T>(
       // Ignore JSON parsing errors.
     }
 
-    throw new Error(errorMessage);
+    throw new ApiError(
+      errorMessage,
+      response.status,
+    );
   }
 
   if (response.status === 204) {
