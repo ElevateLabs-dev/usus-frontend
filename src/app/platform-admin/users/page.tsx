@@ -397,7 +397,7 @@ export default function PlatformUsersPage() {
           <div>
             <label
               htmlFor="admin-email"
-              className="mb-2 block text-xs font-medium text-slate-700"
+              className="mb-2 block text-xs font-medium text-[var(--usus-text)]"
             >
               Email
             </label>
@@ -416,7 +416,7 @@ export default function PlatformUsersPage() {
           <div>
             <label
               htmlFor="admin-name"
-              className="mb-2 block text-xs font-medium text-slate-700"
+              className="mb-2 block text-xs font-medium text-[var(--usus-text)]"
             >
               Full name (optional)
             </label>
@@ -431,13 +431,22 @@ export default function PlatformUsersPage() {
           </div>
 
           {addError && (
-            <div
-              role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-600"
-            >
-              {addError}
-            </div>
-          )}
+  <div
+    role="alert"
+    className="rounded-xl border
+      border-red-300
+      bg-[var(--usus-surface)]
+      px-3
+      py-2.5
+      text-xs
+      leading-5
+      text-[var(--usus-danger)]
+      dark:border-red-900
+    "
+  >
+    {addError}
+  </div>
+)}
 
           <button
             type="submit"

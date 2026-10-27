@@ -7,15 +7,26 @@ export function Input({
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
+      {...props}
       className={cn(
-        "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2",
-        "text-sm text-slate-900 placeholder:text-slate-400",
-        "outline-none transition",
-        "focus:border-slate-400 focus:ring-2 focus:ring-slate-100",
-        "disabled:cursor-not-allowed disabled:bg-slate-50",
+        "flex h-10 w-full rounded-lg border px-3 py-2",
+        "border-[var(--usus-border)]",
+        "bg-[var(--usus-surface)]",
+        "text-sm text-[var(--usus-text)]",
+        "placeholder:text-[var(--usus-text-soft)]",
+        "outline-none transition-colors",
+        "focus:border-[var(--usus-primary)]",
+        "focus:ring-2 focus:ring-[var(--usus-primary)]",
+        "disabled:cursor-not-allowed disabled:opacity-60",
+        "[&:-webkit-autofill]:!bg-[var(--usus-surface)]",
+        "[&:-webkit-autofill]:!text-[var(--usus-text)]",
         className
       )}
-      {...props}
+      style={{
+        color: "var(--usus-text)",
+        colorScheme: "light",
+        ...props.style,
+      }}
     />
   );
 }

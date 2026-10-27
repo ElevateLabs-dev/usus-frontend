@@ -4,11 +4,12 @@ import Link from "next/link";
 
 import {
   ArrowLeft,
-  Camera,
   Mail,
   User,
   LogOut,
-} from "lucide-react";
+} from 'lucide-react';
+
+import ProfilePictureUpload from '@/components/profile-picture/profile-picture-upload';
 
 import { useRouter } from "next/navigation";
 
@@ -178,89 +179,28 @@ export default function ProfilePage() {
 
           {/* Avatar */}
 
-          <div
-            className="
-              flex flex-col
-              items-center
-              border-b
-              border-[var(--usus-border-soft)]
-              pb-7
-            "
-          >
+{/* Avatar */}
+<div className="flex flex-col items-center border-b border-[var(--usus-border-soft)] pb-7">
+  <ProfilePictureUpload
+    initialAvatarUrl="/avatar/usus-avatar.avif"
+    onImageChange={(file) => {
+      // The selected file is now available to the parent.
+      // Connect this to the profile state or API service later.
+      console.log(
+        'Selected profile picture:',
+        file?.name ?? 'No file selected',
+      );
+    }}
+  />
 
-            <div
-              className="
-                relative
-                flex h-24 w-24
-                items-center
-                justify-center
-                rounded-full
-                bg-[var(--usus-primary)]
-                text-3xl
-                font-bold
-                text-black
-              "
-            >
+  <h2 className="mt-4 max-w-full truncate text-center text-xl font-bold">
+    {user.email}
+  </h2>
 
-              {initials}
-
-
-              <button
-                type="button"
-                aria-label="Change profile photo"
-                className="
-                  absolute
-                  bottom-0
-                  right-0
-                  flex h-8 w-8
-                  items-center
-                  justify-center
-                  rounded-full
-                  border-2
-                  border-[var(--usus-surface)]
-                  bg-[var(--usus-text)]
-                  text-[var(--usus-surface)]
-                  transition
-                  hover:bg-[var(--usus-primary)]
-                  hover:text-black
-                "
-              >
-                <Camera
-                  size={14}
-                />
-              </button>
-
-            </div>
-
-
-            <h2
-              className="
-                mt-4
-                max-w-full
-                truncate
-                text-center
-                text-xl
-                font-bold
-              "
-            >
-              {user.email}
-            </h2>
-
-
-            <span
-              className="
-                mt-1
-                rounded-full
-                bg-[var(--usus-primary-soft)]
-                px-3 py-1
-                text-xs
-                font-medium
-              "
-            >
-              {displayRole}
-            </span>
-
-          </div>
+  <span className="mt-1 rounded-full bg-[var(--usus-primary-soft)] px-3 py-1 text-xs font-medium">
+    {displayRole}
+  </span>
+</div>
 
 
           {/* Information */}

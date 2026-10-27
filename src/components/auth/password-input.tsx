@@ -8,6 +8,7 @@ type PasswordInputProps =
   React.InputHTMLAttributes<HTMLInputElement>;
 
 export function PasswordInput({
+  className = "",
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
@@ -17,27 +18,64 @@ export function PasswordInput({
       <Input
         {...props}
         type={visible ? "text" : "password"}
-        className="pr-10"
+        className={`
+          h-11
+          w-full
+          rounded-xl
+          border-[var(--usus-border)]
+          bg-[var(--usus-surface)]
+          text-[var(--usus-text)]
+          placeholder:text-[var(--usus-text-soft)]
+          focus-visible:border-[var(--usus-primary)]
+          focus-visible:ring-[var(--usus-primary)]
+          pr-10
+          [color-scheme:light]
+          autofill:!bg-[var(--usus-surface)]
+          autofill:!text-[var(--usus-text)]
+          ${className}
+        `}
+        style={{
+          color: "var(--usus-text)",
+          backgroundColor: "var(--usus-surface)",
+          WebkitTextFillColor: "var(--usus-text)",
+          ...props.style,
+        }}
       />
 
       <button
         type="button"
-        onClick={() => setVisible((current) => !current)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--usus-muted)]"
+        onClick={() =>
+          setVisible((current) => !current)
+        }
+        disabled={props.disabled}
+        className="
+          absolute
+          right-3
+          top-1/2
+          -translate-y-1/2
+          text-[var(--usus-text-muted)]
+          transition-colors
+          hover:text-[var(--usus-text)]
+          focus-visible:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-[var(--usus-primary)]
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+        "
         aria-label={
           visible
             ? "Hide password"
             : "Show password"
         }
+        aria-controls={props.id}
+        aria-pressed={visible}
       >
         {visible ? (
-          <EyeOff size={15} />
+          <EyeOff size={16} aria-hidden="true" />
         ) : (
-          <Eye size={15} />
+          <Eye size={16} aria-hidden="true" />
         )}
       </button>
     </div>
   );
 }
-
-
