@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { UsusLogo } from "@/components/brand/usus-logo";
 import { TrustTestimonials } from "@/components/testimonials/testimonials";
+import { UsusFAQ } from "@/components/faq/usus-faq";
 
 const features = [
   {
@@ -29,7 +30,7 @@ export default function LandingPage() {
     <main className="min-h-screen overflow-x-hidden bg-[var(--usus-background)] text-[var(--usus-text)] transition-colors duration-200">
 
       {/* Navigation */}
-<header className="fixed inset-x-0 top-0 z-50 border-b border-[var(--usus-border)] bg-[var(--usus-background)]/95 px-6 py-4 backdrop-blur-md sm:px-10 lg:px-16">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-[var(--usus-border)] bg-[var(--usus-background)]/95 px-6 py-4 backdrop-blur-md sm:px-10 lg:px-16">
         <nav
           aria-label="Main navigation"
           className="mx-auto flex h-12 w-full max-w-7xl items-center justify-between"
@@ -309,6 +310,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <UsusFAQ />
 
       {/* Footer */}
 <footer className="border-t border-[var(--usus-border)] bg-[var(--usus-background)] px-6 py-8 sm:px-10 lg:px-16">
