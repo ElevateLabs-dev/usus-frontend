@@ -190,6 +190,19 @@ body {
   }
 }
 
+
+/* Keep browser-autofilled inputs consistent with the application theme. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--usus-text) !important;
+  caret-color: var(--usus-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--usus-surface) inset !important;
+  box-shadow: 0 0 0 1000px var(--usus-surface) inset !important;
+  transition: background-color 99999s ease-out 0s;
+}
+
 /* =========================================================
    THEME TRANSITION
    ========================================================= */
