@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { UsusLogo } from "@/components/brand/usus-logo";
 import { TrustTestimonials } from "@/components/testimonials/testimonials";
 import { UsusFAQ } from "@/components/faq/usus-faq";
+import { PricingSection } from "@/components/pricing/pricing";
 
 const features = [
   {
@@ -312,6 +313,8 @@ export default function LandingPage() {
       </section>
 
       <UsusFAQ />
+
+      <PricingSection />
 
       {/* Footer */}
 <footer className="border-t border-[var(--usus-border)] bg-[var(--usus-background)] px-6 py-8 sm:px-10 lg:px-16">
