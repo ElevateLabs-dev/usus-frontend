@@ -35,6 +35,8 @@ export interface BackendMessage {
 export interface SendMessageResponse {
   user_message: BackendMessage;
   ai_reply: BackendMessage;
+  /** The customer's mood after this reply. */
+  mood: string | null;
 }
 
 export interface BackendDimensionScore {
