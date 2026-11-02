@@ -11,6 +11,8 @@ import {
   type ScenarioInput,
 } from "@/services/training-service";
 
+import { VoicePicker } from "./voice-picker";
+
 const inputClassName =
   "w-full rounded-lg border border-[var(--usus-border)] bg-[var(--usus-surface)] px-3 py-2 text-sm text-[var(--usus-text)] outline-none transition-colors placeholder:text-[var(--usus-text-soft)] focus:border-[var(--usus-primary)] focus:ring-2 focus:ring-[var(--usus-primary-soft)] disabled:opacity-60";
 
@@ -31,6 +33,7 @@ export const EMPTY_SCENARIO: ScenarioInput = {
   customer_name: null,
   customer_personality: null,
   customer_emotion: null,
+  voice_id: null,
   customer_background: null,
   situation: "",
   customer_goal: null,
@@ -337,6 +340,18 @@ export function ScenarioForm({
             }
           />
         </div>
+
+        <VoicePicker
+          value={values.voice_id}
+          onChange={(voiceId) =>
+            set("voice_id", voiceId)
+          }
+          persona={values.persona}
+          customerName={values.customer_name}
+          customerEmotion={values.customer_emotion}
+          description={values.description}
+          selectClassName={inputClassName}
+        />
 
         <TextAreaField
           id="customer-background"

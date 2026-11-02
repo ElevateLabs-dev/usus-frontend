@@ -127,14 +127,20 @@ export function useVapiCall(onEnded?: () => void) {
     return vapi;
   }, []);
 
+  /**
+   * Start with a saved assistant's id, or with a
+   * full assistant configuration (voice previews).
+   */
   const start = useCallback(
-    async (assistantId: string) => {
+    async (assistant: string | Record<string, unknown>) => {
       setError("");
       setState("connecting");
 
       try {
         const vapi = await getVapi();
-        const call = await vapi.start(assistantId);
+        const call = await vapi.start(
+          assistant as Parameters<Vapi["start"]>[0],
+        );
 
         if (!call?.id) {
           throw new Error("No call was started.");

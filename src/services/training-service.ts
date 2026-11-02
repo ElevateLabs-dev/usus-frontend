@@ -80,6 +80,8 @@ export interface ScenarioInput {
   customer_name: string | null;
   customer_personality: string | null;
   customer_emotion: string | null;
+  /** Voice for voice role-play; null = the default voice. */
+  voice_id: string | null;
   customer_background: string | null;
   situation: string;
   customer_goal: string | null;
@@ -108,6 +110,38 @@ export interface ManagedScenario extends ScenarioInput {
 /**
  * Every scenario, including archived ones.
  */
+/** A voice a scenario can use (GET /scenarios/voices). */
+export interface VoiceOption {
+  id: string;
+  name: string;
+  gender: "female" | "male";
+}
+
+export async function getVoices(): Promise<VoiceOption[]> {
+  return apiClient<VoiceOption[]>("/scenarios/voices");
+}
+
+/**
+ * A short Vapi call where the customer introduces
+ * themselves in the chosen voice and emotion.
+ * Pass the result to vapi.start().
+ */
+export async function getVoicePreview(input: {
+  voice_id: string | null;
+  persona: string;
+  customer_name: string | null;
+  customer_emotion: string | null;
+  description: string;
+}): Promise<Record<string, unknown>> {
+  return apiClient<Record<string, unknown>>(
+    "/scenarios/voice-preview",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export async function getManagedScenarios(): Promise<
   ManagedScenario[]
 > {

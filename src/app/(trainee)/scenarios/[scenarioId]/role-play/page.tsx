@@ -177,6 +177,10 @@ export default function RolePlayPage({
   const [messages, setMessages] =
     useState<ConversationMessage[]>([]);
 
+  // The customer's mood after their latest reply.
+  const [liveMood, setLiveMood] =
+    useState<string | null>(null);
+
   const [status, setStatus] =
     useState<SimulationStatus>("idle");
 
@@ -424,6 +428,10 @@ export default function RolePlayPage({
           response.ai_reply,
         );
 
+      if (response.mood) {
+        setLiveMood(response.mood);
+      }
+
       if (customerMessage) {
         setMessages((current) => [
           ...current,
@@ -656,8 +664,10 @@ export default function RolePlayPage({
               scenario.customer.personality
             }
             emotionalState={
-              scenario.customer
-                .emotionalState
+              liveMood
+                ? liveMood.charAt(0).toUpperCase() +
+                  liveMood.slice(1)
+                : scenario.customer.emotionalState
             }
             background={
               scenario.customer.background
