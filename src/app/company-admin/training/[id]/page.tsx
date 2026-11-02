@@ -38,6 +38,7 @@ function toInput(
     customer_personality:
       scenario.customer_personality,
     customer_emotion: scenario.customer_emotion,
+    voice_id: scenario.voice_id ?? null,
     customer_background:
       scenario.customer_background,
     situation: scenario.situation ?? "",
