@@ -13,14 +13,14 @@ import {
 } from "@/services/company-service";
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(
-    undefined,
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export default function CompanyAdminPage() {
@@ -91,13 +91,21 @@ export default function CompanyAdminPage() {
   ).length;
 
   const recentlyActive = (team ?? [])
-    .filter((trainee) => trainee.last_active_at)
-    .sort((a, b) =>
-      (b.last_active_at ?? "").localeCompare(
-        a.last_active_at ?? "",
-      ),
-    )
-    .slice(0, 5);
+  .filter((trainee) => trainee.last_active_at)
+  .sort((a, b) => (b.last_active_at ?? "").localeCompare(a.last_active_at ?? ""))
+  .slice(0, 5)
+  .map((trainee) => ({
+    ...trainee,
+    active_time: trainee.last_active_at, 
+    
+    // Fix: Add ?? "" to handle the potential null type
+    formatted_time: new Date(trainee.last_active_at ?? "").toLocaleTimeString([], {
+      hour: '2-digit', 
+      minute: '2-digit'
+    })
+  }));
+
+
 
   return (
     <div className="min-h-full bg-[var(--usus-background)]">
@@ -209,8 +217,8 @@ export default function CompanyAdminPage() {
                           {trainee.sessions_completed === 1
                             ? "session"
                             : "sessions"}
-                          {trainee.last_active_at &&
-                            ` · last active ${formatDate(trainee.last_active_at)}`}
+                            {trainee.last_active_at &&
+                          ` · Last active: ${formatDate(trainee.last_active_at)}`}
                         </p>
                       </div>
 

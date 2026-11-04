@@ -67,19 +67,20 @@ function getNotificationLabel(
   }
 }
 
-function formatNotificationDate(
-  createdAt: string,
-) {
+function formatNotificationDate(createdAt: string) {
   const date = new Date(createdAt);
 
   if (Number.isNaN(date.getTime())) {
     return createdAt;
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("en-GB", {
     month: "short",
     day: "numeric",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
   }).format(date);
 }
 
