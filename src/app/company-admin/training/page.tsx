@@ -24,6 +24,17 @@ const rowActionClassName =
 
 type View = "active" | "archived";
 
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function CompanyTrainingPage() {
   const area = useStaffArea();
 
@@ -236,6 +247,10 @@ export default function CompanyTrainingPage() {
 
                     <p className="line-clamp-1 text-xs text-[var(--usus-text-muted)]">
                       {scenario.description}
+                    </p>
+
+                    <p className="mt-1 text-[11px] text-[var(--usus-text-muted)]">
+                      Created: {formatDate(scenario.created_at)}
                     </p>
                   </div>
 

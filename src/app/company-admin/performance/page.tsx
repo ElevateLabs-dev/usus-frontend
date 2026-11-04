@@ -15,17 +15,17 @@ import {
 
 function formatDate(value: string | null) {
   if (!value) {
-    return "—";
+    return "Not sent yet";
   }
 
-  return new Date(value).toLocaleDateString(
-    undefined,
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  return new Date(value).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 function score(value: number | null) {

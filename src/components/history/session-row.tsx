@@ -42,10 +42,13 @@ function formatDate(date: string) {
     return date;
   }
 
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
     month: "short",
-    day: "numeric",
     year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
   }).format(value);
 }
 

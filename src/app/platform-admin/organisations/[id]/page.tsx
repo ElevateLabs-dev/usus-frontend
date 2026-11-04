@@ -51,14 +51,14 @@ function formatDate(value: string | null) {
     return "Not sent yet";
   }
 
-  return new Date(value).toLocaleDateString(
-    undefined,
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  return new Date(value).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export default function OrganisationDetailPage() {
