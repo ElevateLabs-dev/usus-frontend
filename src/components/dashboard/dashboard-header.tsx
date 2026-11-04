@@ -11,12 +11,17 @@ interface DashboardHeaderProps {
 export function DashboardHeader({
   name,
 }: DashboardHeaderProps) {
-  const initial = name.charAt(0).toUpperCase();
+  const initial = name?.charAt(0).toUpperCase() || "U";
 
   return (
     <header
       className="
-        h-20
+        sticky
+        top-0
+        z-40
+        h-16
+        sm:h-18
+        lg:h-20
         border-b
         border-[var(--usus-header-border)]
         bg-[var(--usus-header)]
@@ -24,22 +29,39 @@ export function DashboardHeader({
         duration-200
       "
     >
-      <div className="flex h-full items-center justify-between px-6 lg:px-8">
+      <div
+        className="
+          flex
+          h-full
+          w-full
+          items-center
+          justify-between
+          gap-2
+          px-3
+          sm:px-5
+          lg:px-8
+        "
+      >
+        
         {/* Logo */}
-        <div className="flex min-w-0 items-center">
-          <UsusLogo size="md" />
-        </div>
+<div className="flex min-w-0 items-center">
+  <UsusLogo />
+</div>
 
         {/* Right controls */}
-        <div className="flex items-center gap-3">
-          {/* Notification */}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2 lg:gap-3">
+
+          {/* Notifications */}
           <button
             type="button"
             aria-label="Notifications"
             className="
               flex
-              h-10
-              w-10
+              h-9
+              w-9
+              sm:h-10
+              sm:w-10
+              shrink-0
               items-center
               justify-center
               rounded-full
@@ -58,16 +80,19 @@ export function DashboardHeader({
             <Bell size={18} strokeWidth={1.8} />
           </button>
 
-          {/* User */}
+          {/* User profile */}
           <button
             type="button"
+            aria-label="User profile"
             className="
               flex
+              shrink-0
               items-center
-              gap-3
+              gap-2
               rounded-xl
-              px-2
+              px-1.5
               py-1.5
+              sm:px-2
               transition-all
               duration-200
               hover:bg-[var(--usus-sidebar-hover)]
@@ -79,8 +104,10 @@ export function DashboardHeader({
             <div
               className="
                 flex
-                h-10
-                w-10
+                h-9
+                w-9
+                sm:h-10
+                sm:w-10
                 shrink-0
                 items-center
                 justify-center
@@ -94,8 +121,9 @@ export function DashboardHeader({
               {initial}
             </div>
 
-            <div className="hidden text-left sm:block">
-              <p className="text-sm font-semibold text-[var(--usus-text)]">
+            {/* Name hidden on mobile */}
+            <div className="hidden text-left md:block max-w-[140px]">
+              <p className="truncate text-sm font-semibold text-[var(--usus-text)]">
                 {name}
               </p>
 
@@ -105,10 +133,13 @@ export function DashboardHeader({
             </div>
           </button>
 
-          {/* Theme */}
-          <ThemeToggle />
+          {/* Theme toggle */}
+          <div className="shrink-0">
+            <ThemeToggle />
+          </div>
+
         </div>
       </div>
     </header>
   );
-};
+}

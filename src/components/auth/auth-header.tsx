@@ -13,7 +13,6 @@ export function AuthHeader({
     <div className="mb-8">
       <div className="mb-7 flex justify-center">
         <UsusLogo
-          size="sm"
         />
       </div>
 
