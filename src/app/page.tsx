@@ -41,7 +41,7 @@ export default function LandingPage() {
             aria-label="USUS home"
             className="flex items-center"
           >
-            <UsusLogo size="lg" />
+            <UsusLogo />
           </Link>
 
           <div className="flex items-center gap-3 sm:gap-6">

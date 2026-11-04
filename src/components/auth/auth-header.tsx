@@ -12,8 +12,7 @@ export function AuthHeader({
   return (
     <div className="mb-8">
       <div className="mb-7 flex justify-center">
-        <UsusLogo
-        />
+        <UsusLogo />
       </div>
 
       <div className="text-center">
