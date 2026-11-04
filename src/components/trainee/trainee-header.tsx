@@ -93,7 +93,7 @@ export function TraineeHeader({
         >
           {/* LOGO */}
           <div className="flex items-center">
-            <UsusLogo size="lg" />
+            <UsusLogo />
           </div>
 
           {/* RIGHT CONTROLS */}

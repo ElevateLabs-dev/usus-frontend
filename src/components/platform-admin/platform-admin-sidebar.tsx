@@ -1,45 +1,84 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 import { RoleNavigation } from "@/components/navigation/role-navigation";
+import { useAuth } from "@/components/auth/auth-provider";
 
-export function PlatformAdminSidebar() {
+interface PlatformAdminSidebarProps {
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function PlatformAdminSidebar({
+  open = false,
+  onClose,
+}: PlatformAdminSidebarProps) {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  function handleLogout() {
+    onClose?.();
+    logout();
+    router.replace("/login");
+  }
+
   return (
-    <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-[var(--usus-header-border)] bg-[var(--usus-sidebar)] md:flex">
-      {/* Brand */}
-      <div className="flex h-[72px] flex-col justify-center border-b border-[var(--usus-header-border)] px-6">
-        <Link
-          href="/platform-admin"
-          className="text-xl font-semibold tracking-tight text-[var(--usus-text)] transition-colors hover:text-[var(--usus-primary)]"
-        >
-          USUS
-        </Link>
+    <>
+      {/* Mobile backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className={`fixed inset-0 z-[55] bg-black/40 transition-opacity duration-200 md:hidden ${
+          open ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
 
-        <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
-          Platform Administration
-        </p>
-      </div>
+      <aside
+        className={`
+          fixed left-0 top-[72px] z-[60] flex h-[calc(100vh-72px)] w-[280px]
+          flex-col border-r border-[var(--usus-border)]
+          bg-[var(--usus-header)] shadow-2xl
+          transition-transform duration-200 ease-out
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:top-[90px] md:z-40 md:h-[calc(100vh-90px)] md:w-64
+          md:translate-x-0 md:shadow-none
+        `}
+      >
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <RoleNavigation onNavigate={onClose} />
+        </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--usus-text-muted)]">
-          Platform
-        </p>
+        {/* Bottom section */}
+        <div className="border-t border-[var(--usus-border)] p-4">
+          <p className="text-xs font-medium text-[var(--usus-text)]">
+            Platform Admin
+          </p>
 
-        <RoleNavigation />
-      </div>
+          <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
+            USUS Platform
+          </p>
 
-      {/* Bottom */}
-      <div className="border-t border-[var(--usus-header-border)] px-4 py-4">
-        <p className="px-3 text-[10px] font-medium text-[var(--usus-text-muted)]">
-          Platform Admin
-        </p>
-
-        <p className="mt-1 px-3 text-[10px] text-[var(--usus-text-muted)]">
-          USUS Platform
-        </p>
-      </div>
-    </aside>
+          {/* Mobile logout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="
+              mt-4 flex w-full items-center gap-3 rounded-xl
+              px-4 py-3 text-sm font-medium
+              text-[var(--usus-danger)]
+              transition-colors
+              hover:bg-[var(--usus-sidebar-hover)]
+              md:hidden
+            "
+          >
+            <LogOut size={17} />
+            Logout
+          </button>
+        </div>
+      </aside>
+    </>
   );
-};
+}

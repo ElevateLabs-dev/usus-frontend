@@ -6,17 +6,19 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 import { roleNavigation } from "@/config/role-navigation";
 
-/*
- * A role's dashboard is the parent of its other
- * pages, so it is only highlighted on an exact match.
- */
+interface RoleNavigationProps {
+  onNavigate?: () => void;
+}
+
 const DASHBOARD_ROUTES = [
   "/platform-admin",
   "/company-admin",
   "/manager",
 ];
 
-export function RoleNavigation() {
+export function RoleNavigation({
+  onNavigate,
+}: RoleNavigationProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
@@ -38,17 +40,18 @@ export function RoleNavigation() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             className={[
-              "block rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200",
+              "flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
               active
-                ? "bg-[var(--usus-sidebar-active)] text-[var(--usus-text)]"
-                : "text-[var(--usus-text-muted)] hover:bg-[var(--usus-sidebar-hover)] hover:text-[var(--usus-text)]",
+                ? "bg-[var(--usus-primary)] text-black"
+                : "text-[var(--usus-text-secondary)] hover:bg-[var(--usus-surface-hover)] hover:text-[var(--usus-text)]",
             ].join(" ")}
           >
-            {item.label}
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}
     </nav>
   );
-};
+}
