@@ -565,7 +565,7 @@ export default function LearningPathPage() {
                 className="
                   group
                   w-full
-                  cursor-pointer
+                  !cursor-default
                   rounded-2xl
                   border
                   border-[var(--usus-border)]
@@ -575,8 +575,6 @@ export default function LearningPathPage() {
                   shadow-[var(--usus-shadow)]
                   transition-all
                   duration-200
-                  hover:-translate-y-0.5
-                  hover:border-[var(--usus-primary)]
                   hover:shadow-lg
                   focus:outline-none
                   focus:ring-2
@@ -622,9 +620,9 @@ export default function LearningPathPage() {
                     {category.completed} of {category.total} completed
                   </span>
 
-                  <span className="text-sm font-semibold text-[var(--usus-text)] transition-colors group-hover:text-[var(--usus-primary-hover)]">
+                  {/* <span className="text-sm font-semibold text-[var(--usus-text)] transition-colors group-hover:text-[var(--usus-primary-hover)]">
                     View scenarios →
-                  </span>
+                  </span> */}
                 </div>
               </button>
             ))}
