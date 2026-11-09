@@ -5,6 +5,9 @@
    ========================================================= */
 
 :root {
+  --font-body: 'Geist Sans', 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
   --usus-background: #f2f1ed;
   --usus-surface: #faf9f5;
   --usus-surface-soft: #f6f5f1;
@@ -172,6 +175,7 @@ a[aria-disabled="true"] {
   background: var(--usus-primary);
   color: #111111;
 }
+
 /* =========================================================
    MOBILE RESPONSIVENESS
    ========================================================= */
@@ -246,4 +250,890 @@ input:-webkit-autofill:active {
   .animate-testimonial-scroll {
     animation: none;
   }
+}
+/* =========================================
+   USUS PROBLEM / SOLUTION + CORE SOLUTIONS
+   Cleaned stylesheet
+   - Uses the existing USUS theme variables
+   - Square card and panel edges
+   - No hover movement, shadow, or border effects
+   - Final Core Solutions card spans the full grid
+========================================= */
+
+.usus-problem-section,
+.usus-solutions-section {
+  position: relative;
+  overflow: hidden;
+  padding: 110px 0;
+  background: var(--usus-background);
+  color: var(--usus-text);
+}
+
+.usus-solutions-section {
+  background: var(--usus-surface);
+}
+
+.usus-section-container {
+  width: min(1240px, calc(100% - 64px));
+  margin-inline: auto;
+}
+
+.usus-section-heading,
+.usus-solutions-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 54px;
+}
+
+.usus-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 22px;
+  color: var(--usus-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+.usus-section-heading h2,
+.usus-solutions-heading h2 {
+  max-width: 850px;
+  margin: 0;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.08;
+  letter-spacing: -2.8px;
+  font-weight: 600;
+}
+
+.usus-section-heading h2 span,
+.usus-solutions-heading h2 span {
+  color: var(--usus-primary);
+}
+
+.usus-section-heading p,
+.usus-solutions-heading p {
+  max-width: 620px;
+  margin-top: 20px;
+  color: var(--usus-text-muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.usus-heading-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 15px 18px;
+  border: 1px solid var(--usus-border);
+  color: var(--usus-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.usus-heading-note-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  background: var(--usus-primary-soft);
+  color: var(--usus-primary);
+}
+
+/* =========================================
+   PROBLEM / SOLUTION CARDS
+========================================= */
+
+.usus-problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.usus-problem-card {
+  display: flex;
+  min-width: 0;
+  min-height: 490px;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid var(--usus-border);
+  background: var(--usus-surface);
+  color: var(--usus-text);
+}
+
+.usus-problem-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.usus-card-number {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--usus-text-muted);
+}
+
+.usus-card-arrow {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--usus-border);
+  color: var(--usus-text-muted);
+}
+
+.usus-problem-visual {
+  display: flex;
+  min-height: 235px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin: 26px 0;
+  padding: 18px;
+  border: 1px solid var(--usus-border-soft);
+  background: var(--usus-surface-soft);
+}
+
+.usus-problem-card-content {
+  margin-top: auto;
+}
+
+.usus-card-label {
+  color: var(--usus-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.usus-problem-card-content h3 {
+  margin: 12px 0 9px;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.7px;
+}
+
+.usus-problem-card-content p {
+  max-width: 320px;
+  margin: 0;
+  color: var(--usus-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Scenario illustration */
+
+.scenario-visual {
+  width: 100%;
+}
+
+.scenario-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--usus-text-muted);
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.scenario-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  background: var(--usus-primary);
+}
+
+.scenario-question {
+  margin: 22px 0;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.scenario-options {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.scenario-options span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid var(--usus-border);
+  color: var(--usus-text);
+}
+
+.scenario-options div {
+  height: 7px;
+  background: var(--usus-progress-track);
+}
+
+/* Conversation illustration */
+
+.conversation-visual {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conversation-avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  background: var(--usus-primary-soft);
+  color: var(--usus-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.conversation-bubble {
+  max-width: 90%;
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.bubble-ai {
+  background: var(--usus-muted);
+  color: var(--usus-text);
+}
+
+.bubble-user {
+  align-self: flex-end;
+  background: var(--usus-primary-soft);
+  color: var(--usus-text);
+}
+
+.conversation-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--usus-border);
+  color: var(--usus-text-muted);
+  font-size: 10px;
+}
+
+/* Feedback illustration */
+
+.feedback-visual {
+  width: 100%;
+}
+
+.feedback-score {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.feedback-ring {
+  display: grid;
+  width: 75px;
+  height: 75px;
+  flex: 0 0 75px;
+  place-items: center;
+  border: 7px solid var(--usus-primary);
+  border-right-color: var(--usus-progress-track);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.feedback-score small,
+.feedback-score strong {
+  display: block;
+}
+
+.feedback-score small {
+  color: var(--usus-text-muted);
+  font-size: 9px;
+}
+
+.feedback-score strong {
+  margin-top: 7px;
+  font-size: 13px;
+}
+
+.feedback-bars {
+  display: grid;
+  gap: 15px;
+  margin-top: 22px;
+}
+
+.feedback-bars div {
+  display: grid;
+  gap: 7px;
+  color: var(--usus-text-muted);
+  font-size: 10px;
+}
+
+.feedback-bars i {
+  display: block;
+  height: 5px;
+  background: var(--usus-primary);
+}
+
+/* =========================================
+   CORE SOLUTIONS BENTO GRID
+========================================= */
+
+.usus-solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(270px, auto));
+  gap: 16px;
+}
+
+.usus-solution-card {
+  display: flex;
+  min-width: 0;
+  min-height: 280px;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid var(--usus-border);
+  background: var(--usus-surface);
+  color: var(--usus-text);
+}
+
+/* Bento placement */
+
+.solution-wide {
+  grid-column: span 2;
+}
+
+.solution-tall {
+  grid-column: 3;
+  grid-row: span 2;
+}
+
+.solution-small {
+  grid-column: span 1;
+}
+
+/* The final card always fills the complete row */
+
+.usus-solutions-grid > .usus-solution-card:last-child {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+
+.usus-solution-content {
+  position: relative;
+  z-index: 1;
+}
+
+.usus-solution-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.usus-solution-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  background: var(--usus-primary-soft);
+  color: var(--usus-primary);
+}
+
+.usus-solution-number {
+  color: var(--usus-text-soft);
+  font-size: 11px;
+}
+
+.usus-solution-category {
+  color: var(--usus-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.usus-solution-card h3 {
+  margin: 10px 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.7px;
+}
+
+.usus-solution-card p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--usus-text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.usus-solution-visual {
+  position: relative;
+  display: flex;
+  min-height: 150px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-top: 20px;
+  border: 1px solid var(--usus-border-soft);
+  background: var(--usus-surface-soft);
+}
+
+.solution-tall .usus-solution-visual {
+  min-height: 320px;
+}
+
+.usus-solution-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+  color: var(--usus-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.usus-solution-footer svg {
+  color: var(--usus-primary);
+}
+
+/* AI illustration */
+
+.ai-visual {
+  position: relative;
+  display: grid;
+  width: 220px;
+  height: 145px;
+  place-items: center;
+}
+
+.ai-core {
+  z-index: 1;
+  display: grid;
+  width: 65px;
+  height: 65px;
+  place-items: center;
+  background: var(--usus-primary-soft);
+  color: var(--usus-primary);
+}
+
+.ai-orbit {
+  position: absolute;
+  width: 135px;
+  height: 95px;
+  border: 1px dashed var(--usus-border);
+  transform: rotate(-25deg);
+}
+
+.orbit-two {
+  transform: rotate(55deg);
+}
+
+.ai-tag {
+  position: absolute;
+  padding: 6px 9px;
+  border: 1px solid var(--usus-border);
+  background: var(--usus-surface);
+  color: var(--usus-text-muted);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.tag-one {
+  top: 2px;
+  left: 0;
+}
+
+.tag-two {
+  top: 25px;
+  right: 0;
+}
+
+.tag-three {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Scenario illustration */
+
+.solution-scenario {
+  width: 88%;
+  padding: 14px;
+  border: 1px solid var(--usus-border);
+  background: var(--usus-surface);
+}
+
+.mini-window-header {
+  display: flex;
+  gap: 5px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--usus-border-soft);
+}
+
+.mini-window-header span {
+  width: 6px;
+  height: 6px;
+  background: var(--usus-text-soft);
+}
+
+.mini-scenario-content {
+  padding-top: 15px;
+}
+
+.mini-scenario-content small {
+  display: block;
+  color: var(--usus-text-muted);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.mini-scenario-content strong {
+  display: block;
+  margin: 9px 0 15px;
+  font-size: 12px;
+}
+
+.mini-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--usus-border);
+}
+
+.mini-choice span {
+  font-size: 9px;
+}
+
+.mini-choice i {
+  width: 70%;
+  height: 5px;
+  background: var(--usus-border);
+}
+
+.mini-choice.active {
+  border-color: var(--usus-primary);
+  background: var(--usus-primary-soft);
+}
+
+/* Role-play illustration */
+
+.roleplay-visual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+}
+
+.roleplay-person {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  background: var(--usus-primary-soft);
+  color: var(--usus-primary);
+}
+
+.roleplay-lines {
+  display: grid;
+  gap: 7px;
+}
+
+.roleplay-lines i {
+  display: block;
+  width: 85px;
+  height: 6px;
+  background: var(--usus-border);
+}
+
+.roleplay-lines i:last-child {
+  width: 55px;
+}
+
+.roleplay-message {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--usus-border);
+  color: var(--usus-text-muted);
+  font-size: 10px;
+}
+
+/* Evaluation illustration */
+
+.evaluation-visual {
+  width: 100%;
+  padding: 18px;
+}
+
+.evaluation-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--usus-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.evaluation-top svg {
+  color: var(--usus-primary);
+}
+
+.evaluation-chart {
+  display: flex;
+  height: 95px;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--usus-border);
+}
+
+.evaluation-chart i {
+  width: 10%;
+  min-height: 10px;
+  background: var(--usus-primary);
+  opacity: 0.8;
+}
+
+/* Development illustration */
+
+.development-visual {
+  position: relative;
+  display: flex;
+  width: 90%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.development-node {
+  z-index: 1;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  place-items: center;
+  border: 1px solid var(--usus-border);
+  background: var(--usus-surface);
+  color: var(--usus-primary);
+}
+
+.node-two {
+  background: var(--usus-primary-soft);
+}
+
+.development-line {
+  flex: 1;
+  height: 1px;
+  background: var(--usus-border);
+}
+
+.development-caption {
+  position: absolute;
+  top: 70px;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  color: var(--usus-text-muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+/* =========================================
+   RESPONSIVE LAYOUT
+========================================= */
+
+@media (max-width: 900px) {
+  .usus-section-heading,
+  .usus-solutions-heading {
+    align-items: flex-start;
+  }
+
+  .usus-heading-note {
+    display: none;
+  }
+
+  .usus-problem-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .usus-problem-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .usus-solutions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+
+  .solution-tall {
+    grid-column: span 1;
+    grid-row: span 2;
+  }
+
+  .solution-wide {
+    grid-column: span 2;
+  }
+
+  .solution-small {
+    grid-column: span 1;
+  }
+
+  .usus-solutions-grid > .usus-solution-card:last-child {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .usus-problem-section,
+  .usus-solutions-section {
+    padding: 75px 0;
+  }
+
+  .usus-section-container {
+    width: calc(100% - 36px);
+  }
+
+  .usus-section-heading,
+  .usus-solutions-heading {
+    margin-bottom: 32px;
+  }
+
+  .usus-section-heading h2,
+  .usus-solutions-heading h2 {
+    font-size: clamp(32px, 9vw, 43px);
+    letter-spacing: -1.8px;
+  }
+
+  .usus-section-heading p,
+  .usus-solutions-heading p {
+    font-size: 14px;
+  }
+
+  .usus-problem-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .usus-problem-card,
+  .usus-problem-card:last-child {
+    grid-column: 1 / -1;
+    min-height: 440px;
+  }
+
+  .usus-solutions-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 14px;
+  }
+
+  .solution-wide,
+  .solution-tall,
+  .solution-small,
+  .usus-solutions-grid > .usus-solution-card:last-child {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    min-height: 290px;
+  }
+
+  .solution-tall .usus-solution-visual {
+    min-height: 190px;
+  }
+
+  .usus-solution-card h3 {
+    font-size: 20px;
+  }
+}
+
+/* Keep only genuinely circular illustration elements circular. */
+
+.scenario-dot,
+.conversation-avatar,
+.feedback-ring,
+.roleplay-person,
+.development-node,
+.mini-window-header span {
+  border-radius: 50%;
+}
+
+/* =========================================
+   HOVER + MOTION
+   Cards deliberately remain static on hover.
+========================================= */
+
+.usus-problem-card,
+.usus-solution-card {
+  transform: none;
+  box-shadow: none;
+  transition: none;
+}
+
+.usus-problem-card:hover,
+.usus-solution-card:hover {
+  transform: none;
+  border-color: var(--usus-border);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usus-problem-card,
+  .usus-solution-card {
+    transition: none;
+  }
+}
+
+/* =========================================
+   USUS LANDING PAGE TYPOGRAPHY
+========================================= */
+
+.usus-landing {
+  font-family: var(--font-body);
+  color: var(--usus-text);
+}
+
+/* All headings */
+
+.usus-landing h1,
+.usus-landing h2,
+.usus-landing h3,
+.usus-landing h4,
+.usus-landing h5,
+.usus-landing h6 {
+  font-family: var(--font-mono);
+}
+
+/* Body text */
+
+.usus-landing p {
+  font-family: var(--font-body);
+}
+
+/* Labels and interface text */
+
+.usus-landing button,
+.usus-landing a,
+.usus-landing label,
+.usus-landing .usus-eyebrow,
+.usus-landing .usus-section-label {
+  font-family: var(--font-mono);
 }

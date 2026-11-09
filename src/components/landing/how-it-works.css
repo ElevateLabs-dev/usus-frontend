@@ -1,0 +1,219 @@
+/* HOW IT WORKS */
+
+.usus-how {
+  padding: 100px 5%;
+  background: var(--usus-background);
+  color: var(--usus-text);
+  font-family: var(--font-body);
+}
+
+.usus-how-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* SECTION HEADING */
+
+.usus-how-heading {
+  max-width: 750px;
+  margin: 0 auto 75px;
+  text-align: center;
+}
+
+.usus-how-label {
+  display: block;
+  margin-bottom: 20px;
+  color: var(--usus-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+.usus-how-heading h2 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(32px, 4.5vw, 52px);
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -1.5px;
+}
+
+.usus-how-heading > p {
+  max-width: 600px;
+  margin: 20px auto 0;
+  color: var(--usus-text-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* TIMELINE */
+
+.usus-timeline {
+  position: relative;
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+.usus-timeline-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--usus-border);
+  transform: translateX(-50%);
+}
+
+.usus-timeline-row {
+  position: relative;
+  min-height: 180px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  align-items: center;
+}
+
+/* NUMBER MARKERS */
+
+.usus-timeline-number {
+  position: relative;
+  z-index: 2;
+  grid-column: 2;
+  grid-row: 1;
+  width: 46px;
+  height: 46px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  background: var(--usus-background);
+  border: 1px solid var(--usus-primary);
+  color: var(--usus-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* TIMELINE CARDS */
+
+.usus-timeline-card {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  grid-row: 1;
+  padding: 28px;
+  background: var(--usus-surface);
+  border: 1px solid var(--usus-border);
+}
+
+.usus-timeline-card.left {
+  grid-column: 1;
+}
+
+.usus-timeline-card.right {
+  grid-column: 3;
+}
+
+/* HORIZONTAL CONNECTORS */
+
+.usus-timeline-card.left::after,
+.usus-timeline-card.right::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 36px;
+  height: 1px;
+  background: var(--usus-border);
+}
+
+.usus-timeline-card.left::after {
+  right: -37px;
+}
+
+.usus-timeline-card.right::before {
+  left: -37px;
+}
+
+/* CARD LABELS AND SVG ICONS */
+
+.usus-timeline-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--usus-primary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.usus-timeline-label svg {
+  flex-shrink: 0;
+}
+
+/* CARD CONTENT */
+
+.usus-timeline-card h3 {
+  margin: 18px 0 10px;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.usus-timeline-card p {
+  margin: 0;
+  color: var(--usus-text-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* MOBILE */
+
+@media (max-width: 650px) {
+  .usus-how {
+    padding: 70px 6%;
+  }
+
+  .usus-how-heading {
+    margin-bottom: 45px;
+    text-align: left;
+  }
+
+  .usus-how-heading h2 {
+    font-size: clamp(29px, 8vw, 38px);
+  }
+
+  .usus-how-heading > p {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .usus-timeline-line {
+    left: 21px;
+  }
+
+  .usus-timeline-row {
+    min-height: 170px;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 18px;
+    padding-bottom: 25px;
+  }
+
+  .usus-timeline-number {
+    grid-column: 1;
+    width: 42px;
+    height: 42px;
+  }
+
+  .usus-timeline-card.left,
+  .usus-timeline-card.right {
+    grid-column: 2;
+  }
+
+  /* Hide horizontal connectors on mobile */
+
+  .usus-timeline-card.left::after,
+  .usus-timeline-card.right::before {
+    display: none;
+  }
+
+  .usus-timeline-card {
+    padding: 22px;
+  }
+}

@@ -1,15 +1,6 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
-/*
- * Security headers on every response.
- *
- * - The site cannot be shown inside another site's frame (clickjacking).
- * - Browsers must not guess content types.
- * - Other sites only see our origin, never full URLs, in the Referer.
- * - HTTPS only (Render serves HTTPS).
- * - Camera, location etc. are off; the microphone stays allowed for
- *   voice role-play.
- */
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -27,15 +18,16 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value:
-      "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)",
+    value: "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)",
   },
 ];
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["172.20.144.1"],
+  turbopack: {
+    root: process.cwd(),
+  },
 
-  // Do not advertise the framework in an X-Powered-By header.
+  allowedDevOrigins: ["172.20.144.1"],
   poweredByHeader: false,
 
   async headers() {
