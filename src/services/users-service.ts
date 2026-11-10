@@ -24,6 +24,8 @@ export interface OrgUser {
   /** When the invite email was sent; null if it failed. */
   invite_sent_at: string | null;
   created_at: string;
+  /** Profile picture; null for the default one. */
+  avatar_url: string | null;
 }
 
 export interface SkippedTrainee {

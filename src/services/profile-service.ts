@@ -22,3 +22,28 @@ export async function updateMyName(
     }),
   });
 }
+
+/** Fired on window when the signed-in user's picture changes. */
+export const AVATAR_CHANGED_EVENT = "profile-picture-updated";
+
+/**
+ * Upload a new profile picture (JPEG, PNG or WebP,
+ * up to 2 MB). Returns the updated profile.
+ */
+export async function uploadAvatar(file: File): Promise<OrgUser> {
+  const body = new FormData();
+  body.append("file", file);
+
+  const profile = await apiClient<OrgUser>("/users/me/avatar", {
+    method: "PUT",
+    body,
+  });
+
+  window.dispatchEvent(
+    new CustomEvent(AVATAR_CHANGED_EVENT, {
+      detail: profile.avatar_url,
+    }),
+  );
+
+  return profile;
+}

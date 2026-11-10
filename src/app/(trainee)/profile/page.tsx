@@ -12,6 +12,12 @@ import {
 import ProfilePictureUpload from '@/components/profile-picture/profile-picture-upload';
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import {
+  getMyProfile,
+  uploadAvatar,
+} from "@/services/profile-service";
 
 import {
   logout,
@@ -29,6 +35,41 @@ export default function ProfilePage() {
 
   const user =
     useAuthUser();
+
+  // The saved picture; undefined while loading.
+  const [avatarUrl, setAvatarUrl] = useState<
+    string | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getMyProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setAvatarUrl(profile.avatar_url);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvatarUrl(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function saveAvatar(file: File): Promise<string> {
+    const profile = await uploadAvatar(file);
+
+    if (!profile.avatar_url) {
+      throw new Error("The picture could not be saved.");
+    }
+
+    return profile.avatar_url;
+  }
 
 
   function handleLogout() {
@@ -181,17 +222,14 @@ export default function ProfilePage() {
 
 {/* Avatar */}
 <div className="flex flex-col items-center border-b border-[var(--usus-border-soft)] pb-7">
-  <ProfilePictureUpload
-    initialAvatarUrl="/avatar/usus-avatar.avif"
-    onImageChange={(file) => {
-      // The selected file is now available to the parent.
-      // Connect this to the profile state or API service later.
-      console.log(
-        'Selected profile picture:',
-        file?.name ?? 'No file selected',
-      );
-    }}
-  />
+  {avatarUrl === undefined ? (
+    <div className="h-28 w-28 animate-pulse rounded-full bg-[var(--usus-muted)]" />
+  ) : (
+    <ProfilePictureUpload
+      initialAvatarUrl={avatarUrl ?? undefined}
+      onSave={saveAvatar}
+    />
+  )}
 
   <h2 className="mt-4 max-w-full truncate text-center text-xl font-bold">
     {user.email}
