@@ -42,8 +42,16 @@ export function VoicePicker({
   const [starting, setStarting] = useState(false);
 
   const call = useVapiCall();
+  const { preload } = call;
   const playing =
     call.state === "connecting" || call.state === "live";
+
+  // Load the voice SDK early so previews start faster.
+  useEffect(() => {
+    if (voiceAvailable) {
+      void preload();
+    }
+  }, [preload]);
 
   useEffect(() => {
     getVoices()

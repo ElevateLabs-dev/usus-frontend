@@ -12,13 +12,16 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 
 import { logout } from "@/services/auth-service";
 import { useAuthUser } from "@/hooks/use-auth-user";
+import {
+  AVATAR_CHANGED_EVENT,
+  getMyProfile,
+} from "@/services/profile-service";
 
 interface TraineeHeaderProps {
   onMenuClick?: () => void;
 }
 
 const DEFAULT_AVATAR = "/avatar/usus-avatar.avif";
-const PROFILE_PICTURE_KEY = "usus-profile-picture";
 
 export function TraineeHeader({
   onMenuClick,
@@ -28,27 +31,30 @@ export function TraineeHeader({
 
   const [profilePicture, setProfilePicture] = useState("");
 
+  // The saved picture from the profile, updated when it changes.
   useEffect(() => {
-    function loadProfilePicture() {
-      setProfilePicture(
-        localStorage.getItem(PROFILE_PICTURE_KEY) ?? ""
-      );
+    let cancelled = false;
+
+    getMyProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setProfilePicture(profile.avatar_url ?? "");
+        }
+      })
+      .catch(() => {
+        // Keep the default picture.
+      });
+
+    function handleChange(event: Event) {
+      const url = (event as CustomEvent<string | null>).detail;
+      setProfilePicture(url ?? "");
     }
 
-    loadProfilePicture();
-
-    window.addEventListener("storage", loadProfilePicture);
-    window.addEventListener(
-      "profile-picture-updated",
-      loadProfilePicture
-    );
+    window.addEventListener(AVATAR_CHANGED_EVENT, handleChange);
 
     return () => {
-      window.removeEventListener("storage", loadProfilePicture);
-      window.removeEventListener(
-        "profile-picture-updated",
-        loadProfilePicture
-      );
+      cancelled = true;
+      window.removeEventListener(AVATAR_CHANGED_EVENT, handleChange);
     };
   }, []);
 
