@@ -171,6 +171,20 @@ export async function startVoiceCall(
 }
 
 /**
+ * Remove a prepared AI customer that was never
+ * called. Sent with keepalive so it also works
+ * while the page is closing.
+ */
+export function cancelVoiceCall(sessionId: string) {
+  void apiClient(
+    `/simulations/${sessionId}/voice/cancel`,
+    { method: "POST", keepalive: true },
+  ).catch(() => {
+    // Best effort: an unused assistant costs nothing.
+  });
+}
+
+/**
  * End a voice session: the backend saves the
  * call's transcript and starts the evaluation,
  * like endSimulation(). Can take a few seconds.

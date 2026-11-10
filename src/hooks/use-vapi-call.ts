@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { preconnect } from "react-dom";
+
 import type Vapi from "@vapi-ai/web";
 
 import { VAPI_PUBLIC_KEY } from "@/services/simulation-service";
@@ -23,6 +25,14 @@ export interface TranscriptLine {
   speaker: "customer" | "trainee";
   text: string;
 }
+
+// What the trainee sees while a call is connecting.
+const PROGRESS_LABELS: Record<string, string> = {
+  "web-call-creation": "Calling the customer...",
+  "daily-call-object-creation": "Setting up audio...",
+  "mobile-permissions": "Checking your microphone...",
+  "daily-call-join": "Connecting audio...",
+};
 
 interface VapiTranscriptMessage {
   type?: string;
@@ -59,6 +69,14 @@ export function useVapiCall(onEnded?: () => void) {
     TranscriptLine[]
   >([]);
 
+  // Current connection step while connecting.
+  const [progress, setProgress] = useState("");
+
+  // null until checked; false if the microphone is blocked.
+  const [micAllowed, setMicAllowed] = useState<
+    boolean | null
+  >(null);
+
   /*
    * Load the SDK in the browser only.
    */
@@ -73,7 +91,21 @@ export function useVapiCall(onEnded?: () => void) {
 
     const vapi = new VapiClient(VAPI_PUBLIC_KEY);
 
-    vapi.on("call-start", () => setState("live"));
+    vapi.on("call-start", () => {
+      setState("live");
+      setProgress("");
+    });
+
+    vapi.on(
+      "call-start-progress",
+      (event: { stage?: string }) => {
+        const label =
+          PROGRESS_LABELS[event.stage ?? ""];
+        if (label) {
+          setProgress(label);
+        }
+      },
+    );
 
     vapi.on("call-end", () => {
       setState("ended");
@@ -128,6 +160,35 @@ export function useVapiCall(onEnded?: () => void) {
   }, []);
 
   /**
+   * Free work done before the call: load the SDK and
+   * open a connection to Vapi, so Start is quicker.
+   */
+  const preload = useCallback(async () => {
+    preconnect("https://api.vapi.ai");
+    await getVapi();
+  }, [getVapi]);
+
+  /**
+   * preload(), plus ask for the microphone now
+   * rather than in the middle of starting the call.
+   * Nothing is billed: no call exists yet.
+   */
+  const prepare = useCallback(async () => {
+    await preload();
+
+    try {
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicAllowed(true);
+    } catch {
+      setMicAllowed(false);
+    }
+  }, [preload]);
+
+  /**
    * Start with a saved assistant's id, or with a
    * full assistant configuration (voice previews).
    */
@@ -135,6 +196,7 @@ export function useVapiCall(onEnded?: () => void) {
     async (assistant: string | Record<string, unknown>) => {
       setError("");
       setState("connecting");
+      setProgress("Calling the customer...");
 
       try {
         const vapi = await getVapi();
@@ -152,9 +214,15 @@ export function useVapiCall(onEnded?: () => void) {
           "Could not start the call. Allow microphone access and try again.",
         );
         setState("error");
+        setProgress("");
       }
     },
     [getVapi],
+  );
+
+  const callId = useCallback(
+    () => callIdRef.current,
+    [],
   );
 
   const stop = useCallback(async () => {
@@ -188,7 +256,11 @@ export function useVapiCall(onEnded?: () => void) {
     muted,
     customerSpeaking,
     transcript,
-    callId: () => callIdRef.current,
+    progress,
+    micAllowed,
+    callId,
+    preload,
+    prepare,
     start,
     stop,
     toggleMute,
