@@ -7,7 +7,6 @@ import {
   ChartNoAxesCombined,
   MessageSquareText,
   ShieldCheck,
-  Sparkles,
   Target,
   Users,
 } from "lucide-react";
@@ -106,7 +105,6 @@ export function ProblemSolution() {
         <div className="usus-section-heading">
           <div>
             <span className="usus-eyebrow">
-              <Sparkles size={14} />
               THE USUS APPROACH
             </span>
 
@@ -240,7 +238,6 @@ export function CoreSolutions() {
         <div className="usus-solutions-heading">
           <div>
             <span className="usus-eyebrow">
-              <Sparkles size={14} />
               WHAT USUS OFFERS
             </span>
 
