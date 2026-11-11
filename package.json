@@ -1,15 +1,20 @@
 {
-  "name": "usus-personal",
+  "name": "usus-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
+    "@opennextjs/cloudflare": "^1.20.16",
     "@tanstack/react-query": "^5.101.4",
     "@vapi-ai/web": "2.7.1",
     "class-variance-authority": "^0.7.1",
@@ -43,6 +48,7 @@
     "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.159.0"
   }
 }
