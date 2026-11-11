@@ -69,8 +69,8 @@ export function LandingHero() {
         {/* Description */}
         <p className="mx-auto mt-6 max-w-2xl text-sm leading-7 text-[var(--usus-text-muted)] sm:text-base sm:leading-8">
           Help your employees learn your organisation&apos;s procedures,
-          practise realistic workplace situations with AI, and improve
-          through feedback and evaluation.
+          simulate realistic workplace situations with AI and improve
+          through structured evaluation.
         </p>
 
         {/* Actions */}
@@ -126,7 +126,7 @@ export function LandingHero() {
 
         {/* Explanatory video */}
         <div
-          id="product-video"
+          id="product-video demo"
           className="
             relative
             mx-auto
