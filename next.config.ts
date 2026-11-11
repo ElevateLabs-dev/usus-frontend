@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -41,3 +40,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
