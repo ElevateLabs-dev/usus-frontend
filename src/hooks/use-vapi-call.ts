@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { preconnect } from "react-dom";
+
 import type Vapi from "@vapi-ai/web";
 
 import { VAPI_PUBLIC_KEY } from "@/services/simulation-service";
@@ -75,6 +77,11 @@ export function useVapiCall(onEnded?: () => void) {
 
   // Current connection step while connecting.
   const [progress, setProgress] = useState("");
+
+  // null until checked; false if the microphone is blocked.
+  const [micAllowed, setMicAllowed] = useState<
+    boolean | null
+  >(null);
 
   /*
    * Load the SDK in the browser only.
@@ -177,6 +184,35 @@ export function useVapiCall(onEnded?: () => void) {
   }, []);
 
   /**
+   * Free work done before the call: load the SDK and
+   * open a connection to Vapi, so Start is quicker.
+   */
+  const preload = useCallback(async () => {
+    preconnect("https://api.vapi.ai");
+    await getVapi();
+  }, [getVapi]);
+
+  /**
+   * preload(), plus ask for the microphone now
+   * rather than in the middle of starting the call.
+   * Nothing is billed: no call exists yet.
+   */
+  const prepare = useCallback(async () => {
+    await preload();
+
+    try {
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+      stream.getTracks().forEach((track) => track.stop());
+      setMicAllowed(true);
+    } catch {
+      setMicAllowed(false);
+    }
+  }, [preload]);
+
+  /**
    * Start with a saved assistant's id, or with a
    * full assistant configuration (voice previews).
    */
@@ -249,7 +285,10 @@ export function useVapiCall(onEnded?: () => void) {
     customerSpeaking,
     transcript,
     progress,
+    micAllowed,
     callId,
+    preload,
+    prepare,
     start,
     stop,
     toggleMute,
