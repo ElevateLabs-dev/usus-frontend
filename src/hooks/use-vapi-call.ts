@@ -7,8 +7,6 @@ import {
   useState,
 } from "react";
 
-import { preconnect } from "react-dom";
-
 import type Vapi from "@vapi-ai/web";
 
 import { VAPI_PUBLIC_KEY } from "@/services/simulation-service";
@@ -44,12 +42,18 @@ interface VapiTranscriptMessage {
 /**
  * One Vapi web call: start, mute, hang up, and
  * the live transcript. onEnded runs when the call
- * ends, whoever hung up.
+ * ends, whoever hung up. A call that drops before
+ * the customer says anything does not count: it
+ * shows an error and can be started again.
  */
 export function useVapiCall(onEnded?: () => void) {
   const vapiRef = useRef<Vapi | null>(null);
   const callIdRef = useRef<string | null>(null);
   const onEndedRef = useRef(onEnded);
+  // Whether the customer spoke, and whether the
+  // trainee hung up, in the current call.
+  const customerSpokeRef = useRef(false);
+  const hangingUpRef = useRef(false);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
@@ -71,11 +75,6 @@ export function useVapiCall(onEnded?: () => void) {
 
   // Current connection step while connecting.
   const [progress, setProgress] = useState("");
-
-  // null until checked; false if the microphone is blocked.
-  const [micAllowed, setMicAllowed] = useState<
-    boolean | null
-  >(null);
 
   /*
    * Load the SDK in the browser only.
@@ -108,14 +107,28 @@ export function useVapiCall(onEnded?: () => void) {
     );
 
     vapi.on("call-end", () => {
-      setState("ended");
       setCustomerSpeaking(false);
+      setProgress("");
+
+      if (
+        !hangingUpRef.current &&
+        !customerSpokeRef.current
+      ) {
+        setError(
+          "The call dropped before the customer answered. Start the call again.",
+        );
+        setState("error");
+        return;
+      }
+
+      setState("ended");
       onEndedRef.current?.();
     });
 
-    vapi.on("speech-start", () =>
-      setCustomerSpeaking(true),
-    );
+    vapi.on("speech-start", () => {
+      customerSpokeRef.current = true;
+      setCustomerSpeaking(true);
+    });
 
     vapi.on("speech-end", () =>
       setCustomerSpeaking(false),
@@ -130,6 +143,10 @@ export function useVapiCall(onEnded?: () => void) {
           !message.transcript
         ) {
           return;
+        }
+
+        if (message.role !== "user") {
+          customerSpokeRef.current = true;
         }
 
         const line: TranscriptLine = {
@@ -160,35 +177,6 @@ export function useVapiCall(onEnded?: () => void) {
   }, []);
 
   /**
-   * Free work done before the call: load the SDK and
-   * open a connection to Vapi, so Start is quicker.
-   */
-  const preload = useCallback(async () => {
-    preconnect("https://api.vapi.ai");
-    await getVapi();
-  }, [getVapi]);
-
-  /**
-   * preload(), plus ask for the microphone now
-   * rather than in the middle of starting the call.
-   * Nothing is billed: no call exists yet.
-   */
-  const prepare = useCallback(async () => {
-    await preload();
-
-    try {
-      const stream =
-        await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      stream.getTracks().forEach((track) => track.stop());
-      setMicAllowed(true);
-    } catch {
-      setMicAllowed(false);
-    }
-  }, [preload]);
-
-  /**
    * Start with a saved assistant's id, or with a
    * full assistant configuration (voice previews).
    */
@@ -196,6 +184,9 @@ export function useVapiCall(onEnded?: () => void) {
     async (assistant: string | Record<string, unknown>) => {
       setError("");
       setState("connecting");
+      setTranscript([]);
+      customerSpokeRef.current = false;
+      hangingUpRef.current = false;
       setProgress("Calling the customer...");
 
       try {
@@ -226,6 +217,7 @@ export function useVapiCall(onEnded?: () => void) {
   );
 
   const stop = useCallback(async () => {
+    hangingUpRef.current = true;
     await vapiRef.current?.stop();
   }, []);
 
@@ -257,10 +249,7 @@ export function useVapiCall(onEnded?: () => void) {
     customerSpeaking,
     transcript,
     progress,
-    micAllowed,
     callId,
-    preload,
-    prepare,
     start,
     stop,
     toggleMute,

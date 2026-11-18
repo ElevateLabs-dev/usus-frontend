@@ -23,8 +23,6 @@ interface VoiceCallProps {
   starting: boolean;
   /** The connection step while connecting. */
   progress: string;
-  /** false when the microphone is blocked. */
-  micAllowed: boolean | null;
   onStart: () => void;
   onToggleMute: () => void;
   onHangUp: () => void;
@@ -47,7 +45,6 @@ export function VoiceCall({
   transcript,
   starting,
   progress,
-  micAllowed,
   onStart,
   onToggleMute,
   onHangUp,
@@ -148,9 +145,7 @@ export function VoiceCall({
 
         {state === "idle" && (
           <p className="mt-4 max-w-sm text-[11px] leading-5 text-[var(--usus-text-muted)]">
-            {micAllowed === false
-              ? "Your microphone is blocked. Allow it in your browser's site settings, then start the call."
-              : "Answer the call the way you would with a real customer."}
+            Answer the call the way you would with a real customer.
           </p>
         )}
       </div>

@@ -21,7 +21,6 @@ import {
   endSimulation,
   endVoiceSimulation,
   startVoiceCall,
-  cancelVoiceCall,
   voiceAvailable,
 } from "@/services/simulation-service";
 
@@ -208,105 +207,8 @@ export default function RolePlayPage({
     void handleEndSession();
   });
 
-  // Stable functions from the hook, for effects.
-  const { prepare: prepareCall, callId: currentCallId } =
-    call;
-
   const [startingCall, setStartingCall] =
     useState(false);
-
-  /*
-   * The session and the AI customer are created as
-   * soon as the voice page opens (free: no call yet),
-   * so pressing Start only has to join the call.
-   */
-  const preparedRef = useRef<{
-    sessionId: string;
-    assistantId: string;
-  } | null>(null);
-
-  const preparingRef = useRef<Promise<{
-    sessionId: string;
-    assistantId: string;
-  } | null> | null>(null);
-
-  function prepareVoice() {
-    if (!preparingRef.current) {
-      preparingRef.current = (async () => {
-        const currentSessionId = await ensureSession();
-
-        if (!currentSessionId) {
-          return null;
-        }
-
-        const assistantId =
-          await startVoiceCall(currentSessionId);
-
-        preparedRef.current = {
-          sessionId: currentSessionId,
-          assistantId,
-        };
-        return preparedRef.current;
-      })().catch((error) => {
-        preparingRef.current = null;
-        throw error;
-      });
-    }
-
-    return preparingRef.current;
-  }
-
-  const prepareVoiceRef = useRef(prepareVoice);
-
-  useEffect(() => {
-    prepareVoiceRef.current = prepareVoice;
-  });
-
-  useEffect(() => {
-    if (!isVoice || !scenario) {
-      return;
-    }
-
-    // One tick later, so no state is set during the effect.
-    const timer = window.setTimeout(() => {
-      void prepareCall();
-      prepareVoiceRef.current().catch((error) =>
-        setSessionError(
-          error instanceof Error
-            ? error.message
-            : "Unable to prepare the call.",
-        ),
-      );
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [isVoice, scenario, prepareCall]);
-
-  /*
-   * Leaving without calling: remove the unused AI
-   * customer (the empty session stays out of history).
-   */
-  useEffect(() => {
-    if (!isVoice) {
-      return;
-    }
-
-    const release = () => {
-      const prepared = preparedRef.current;
-
-      if (prepared && !currentCallId()) {
-        preparedRef.current = null;
-        cancelVoiceCall(prepared.sessionId);
-      }
-    };
-
-    window.addEventListener("pagehide", release);
-
-    return () => {
-      window.removeEventListener("pagehide", release);
-      release();
-    };
-  }, [isVoice, currentCallId]);
 
   async function handleStartCall() {
     if (startingCall) {
@@ -317,13 +219,18 @@ export default function RolePlayPage({
     setSessionError("");
 
     try {
-      const prepared = await prepareVoice();
+      // The session and the AI customer are created
+      // only when the trainee starts the call.
+      const currentSessionId = await ensureSession();
 
-      if (!prepared) {
+      if (!currentSessionId) {
         return;
       }
 
-      await call.start(prepared.assistantId);
+      const assistantId =
+        await startVoiceCall(currentSessionId);
+
+      await call.start(assistantId);
     } catch (error) {
       setSessionError(
         error instanceof Error
@@ -432,7 +339,7 @@ export default function RolePlayPage({
    * ============================================================
    */
 
-  // Voice sessions are created early; time the call itself.
+  // Voice sessions: time the call itself.
   const timing =
     Boolean(sessionId) &&
     (!isVoice || call.state === "live");
@@ -787,7 +694,6 @@ export default function RolePlayPage({
               transcript={call.transcript}
               starting={startingCall}
               progress={call.progress}
-              micAllowed={call.micAllowed}
               onStart={handleStartCall}
               onToggleMute={call.toggleMute}
               onHangUp={handleEndSession}
