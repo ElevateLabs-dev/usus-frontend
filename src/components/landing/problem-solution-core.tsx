@@ -16,7 +16,7 @@ const problems = [
     number: "01",
     title: "Move beyond theory.",
     description:
-      "Give learners opportunities to explore practical situations and apply what they learn.",
+      "Give employees opportunities to explore practical situations and apply what they learn.",
     label: "PRACTICAL LEARNING",
     theme: "navy",
     visual: "scenario",
@@ -34,7 +34,7 @@ const problems = [
     number: "03",
     title: "Turn practice into progress.",
     description:
-      "Use feedback and evaluation to help learners recognise strengths and areas for improvement.",
+      "Use feedback and evaluation to help employees recognise strengths and areas for improvement.",
     label: "LEARNER DEVELOPMENT",
     theme: "green",
     visual: "feedback",
@@ -105,17 +105,11 @@ export function ProblemSolution() {
         <div className="usus-section-heading">
           <div>
             <span className="usus-eyebrow">
-              THE USUS APPROACH
+              LEARNING DESIGNED AROUND PEOPLE
             </span>
 
-            <h2>
-              Training people is easy.
-              <br />
-              <span>Preparing them for reality is different.</span>
-            </h2>
-
             <p>
-              Move beyond passive learning. Give people opportunities to
+              Move beyond passive learning. Give employees opportunities to
               practise, develop practical skills and build confidence.
             </p>
           </div>
@@ -125,9 +119,9 @@ export function ProblemSolution() {
               <BrainCircuit size={20} />
             </span>
             <span>
-              Learning designed
+              Build confident 
               <br />
-              around people.
+              employees
             </span>
           </div>
         </div>
@@ -238,18 +232,17 @@ export function CoreSolutions() {
         <div className="usus-solutions-heading">
           <div>
             <span className="usus-eyebrow">
-              WHAT USUS OFFERS
+              CORE FEATURES
             </span>
 
             <h2>
-              Everything your organisation needs to develop{" "}
-              <span>confident people.</span>
+              Comprehensive Features That
+              <br/>
+              Track Employee Progress
             </h2>
 
             <p>
-              One learning environment for creating engaging experiences,
-              practising real-world situations and supporting continuous
-              development.
+              A learning environment for creating personalized training, practising workplace scenarios and tracking employee progress.
             </p>
           </div>
         </div>

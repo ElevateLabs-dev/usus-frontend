@@ -26,7 +26,7 @@ const faqs = [
   {
     question: "HOW DO I ACCESS MY TRAINING DASHBOARD?",
     answer:
-      "Sign in to your USUS account to access your training dashboard and the learning activities available to you.",
+      "Sign in to your USUS account through your company to access your training dashboard and the learning activities available to you.",
   },
 ];
 
