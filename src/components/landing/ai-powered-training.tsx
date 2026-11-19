@@ -149,19 +149,18 @@ export function AIPoweredTraining() {
         <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="max-w-[760px]">
             <span className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--usus-primary)]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--usus-primary)]" />
+              {/* <span className="h-1.5 w-1.5 rounded-full bg-[var(--usus-primary)]" /> */}
               AI-POWERED WORKPLACE TRAINING
             </span>
 
             <h2 className="max-w-[760px] text-3xl font-semibold leading-[1.08] tracking-[-0.045em] text-[var(--usus-text)] sm:text-4xl lg:text-[54px]">
-              Put AI to work across
+              Move beyond traditional
               <br className="hidden sm:block" />
-              your readiness platform.
+              training
             </h2>
 
             <p className="mt-5 max-w-[650px] text-sm leading-7 text-[var(--usus-text-muted)] sm:text-base">
-              Move beyond traditional training with AI-powered workplace
-              experiences that help employees practise, receive feedback and
+              With AI-powered workplace simulations, employees practise, receive feedback and
               develop practical confidence.
             </p>
           </div>

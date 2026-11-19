@@ -113,7 +113,7 @@ export function LandingNavigation() {
           </Link>
 
           <Link
-            href="#demo"
+            href="mailto:hello@elevatelabs.dev"
             className="
               inline-flex h-[40px] items-center justify-center
               bg-[var(--usus-primary)] px-5
@@ -123,7 +123,7 @@ export function LandingNavigation() {
               hover:bg-[var(--usus-primary-hover)]
             "
           >
-            Book a Demo
+            Contact Us Now
           </Link>
         </div>
 
@@ -201,7 +201,7 @@ export function LandingNavigation() {
                 </Link>
 
                 <Link
-                  href="#demo"
+                  href="mailto:hello@elevatelabs.dev"
                   className="
                     flex h-11 items-center justify-center
                     bg-[var(--usus-primary)]
@@ -209,7 +209,7 @@ export function LandingNavigation() {
                     text-[#252624]
                   "
                 >
-                  Book a Demo
+                  Contact Us Now
                 </Link>
               </div>
             </div>

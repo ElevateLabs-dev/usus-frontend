@@ -41,9 +41,12 @@ export function LandingHero() {
       <div className="relative mx-auto max-w-7xl">
 
         {/* Introductory label */}
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--usus-primary)]">
-          Workplace Training & Readiness Platform
+          <span className="mb-5 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--usus-primary)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--usus-primary)]" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--usus-primary)]">
+          Roleplay with USUS
         </p>
+          </span>
 
         {/* Main heading */}
         <h1
@@ -60,17 +63,16 @@ export function LandingHero() {
             lg:text-7xl
           "
         >
-          Turn workplace knowledge into{" "}
+          AI simulation environment for{" "}
           <span className="text-[var(--usus-primary)]">
-            real-world confidence.
+            real-world interaction.
           </span>
         </h1>
 
         {/* Description */}
         <p className="mx-auto mt-6 max-w-2xl text-sm leading-7 text-[var(--usus-text-muted)] sm:text-base sm:leading-8">
-          Help your employees learn your organisation&apos;s procedures,
-          simulate realistic workplace situations with AI and improve
-          through structured evaluation.
+          New roles come with new challenges. USUS offers personalised AI-powered training and realistic simulations, 
+          helps your employees learn your organisation&apos;s procedures, and measures progress until they are ready to perform.
         </p>
 
         {/* Actions */}
@@ -95,7 +97,7 @@ export function LandingHero() {
               hover:bg-[var(--usus-primary-hover)]
             "
           >
-            Get a Demo
+            Get in Touch
           </Link>
 
           <a

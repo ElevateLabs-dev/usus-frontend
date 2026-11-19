@@ -7,7 +7,7 @@ const footerGroups = [
       { label: "About Us", href: "#about" },
       { label: "Pricing", href: "/pricing" },
       { label: "Enterprise", href: "#enterprise" },
-      { label: "Contact", href: "#contact" },
+      { label: "Contact", href: "mailto:hello@elevatelabs.dev" },
     ],
   },
   {
@@ -89,8 +89,8 @@ export function LandingCTA() {
           </p>
 
           <div className="usus-cta-actions">
-            <Link href="#book-demo" className="usus-cta-button primary">
-              BOOK A DEMO
+            <Link href="mailto:hello@elevatelabs.dev" className="usus-cta-button primary">
+              Contact Us Now
               <span aria-hidden="true">→</span>
             </Link>
 
@@ -120,9 +120,7 @@ export function LandingFooter() {
           </Link>
 
           <p>
-            Building confidence through
-            <br />
-            realistic AI-powered practice.
+            Try Roleplay with USUS
           </p>
         </div>
 

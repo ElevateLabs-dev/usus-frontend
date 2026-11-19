@@ -44,12 +44,6 @@ export function UseCases() {
         <div className="usus-use-cases-heading">
           <span className="usus-use-cases-label">WHERE USUS MAKES AN IMPACT</span>
 
-          <h2>
-            REALISTIC PRACTICE.
-            <br />
-            MEANINGFUL PROGRESS.
-          </h2>
-
           <p>
             Give people opportunities to develop the skills and confidence
             needed across different workplace situations.
