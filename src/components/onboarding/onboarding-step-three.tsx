@@ -118,23 +118,13 @@ export function OnboardingStepThree({
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-[var(--usus-text-muted)]">
-          We&apos;ve sent a 6-digit verification code to your company email address.
-        </p>
-      </div>
-
-      <div className="mb-8 border border-[var(--usus-border)] bg-[var(--usus-surface-soft)] px-4 py-3">
-        <p className="text-xs text-[var(--usus-text-muted)]">
-          Company email
-        </p>
-
-        <p className="mt-1 break-all text-sm font-medium text-[var(--usus-text)]">
-          {companyEmail}
+          Enter the 6-digit verification code sent to your company email address.
         </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <label className="text-sm font-medium text-[var(--usus-text)]">
-          Enter verification code
+          Verification code
         </label>
 
         <div className="mt-3 flex justify-between gap-2">
