@@ -4,6 +4,8 @@ import { useState } from "react";
 
 import { CompanyAdminHeader } from "@/components/company-admin/company-admin-header";
 import { CompanyAdminSidebar } from "@/components/company-admin/company-admin-sidebar";
+import { OrganisationSetupChecklist } from "@/components/company-admin/organisation-setup-checklist";
+
 import { RoleGuard } from "@/components/auth/role-guard";
 
 export default function CompanyAdminLayout({
@@ -17,25 +19,36 @@ export default function CompanyAdminLayout({
     <RoleGuard allowedRoles={["company_admin"]}>
       <div className="min-h-screen bg-[var(--usus-background)] text-[var(--usus-text)]">
 
-        {/* Sidebar */}
+        {/* MAIN NAVIGATION */}
         <CompanyAdminSidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
 
+        {/* MAIN AREA */}
         <div className="min-h-screen md:ml-64">
 
-          {/* Header */}
+          {/* HEADER */}
           <CompanyAdminHeader
-            onMenuClick={() => setSidebarOpen((prev) => !prev)}
+            onMenuClick={() => setSidebarOpen((previous) => !previous)}
           />
 
-          {/* Page content */}
+          {/* PAGE CONTENT */}
           <main className="min-h-screen pt-[72px] md:pt-[90px]">
-            {children}
+            <div className="mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+              {children}
+            </div>
           </main>
-
         </div>
+
+        {/* FLOATING ORGANISATION SETUP */}
+        <OrganisationSetupChecklist
+          subscriptionHref="/company-admin/subscription"
+          knowledgeBaseHref="/company-admin/knowledge-base"
+          settingsHref="/company-admin/settings"
+          teamHref="/company-admin/managers"
+        />
+
       </div>
     </RoleGuard>
   );

@@ -54,12 +54,20 @@ export const roleNavigation: Record<
       href: "/company-admin/trainees",
     },
     {
-      label: "Training",
-      href: "/company-admin/training",
+      label: "Scenarios",
+      href: "/company-admin/scenarios",
+    },
+    {
+      label: "Knowledge Base",
+      href: "/company-admin/knowledge-base",
     },
     {
       label: "Performance",
       href: "/company-admin/performance",
+    },
+    {
+      label: "Subscription",
+      href: "/company-admin/subscription",
     },
     {
       label: "Settings",
@@ -77,8 +85,8 @@ export const roleNavigation: Record<
       href: "/manager/team",
     },
     {
-      label: "Training",
-      href: "/manager/training",
+      label: "Scenarios",
+      href: "/manager/scenarios",
     },
     {
       label: "Performance",

@@ -42,36 +42,33 @@ export default function CompanyTrainingPage() {
     ManagedScenario[]
   >([]);
 
-  const [loading, setLoading] =
-    useState(true);
-
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const [view, setView] =
-    useState<View>("active");
+  const [view, setView] = useState<View>("active");
 
-  const [busyId, setBusyId] = useState<
-    string | null
-  >(null);
+  const [busyId, setBusyId] = useState<string | null>(
+    null,
+  );
 
-  const loadScenarios =
-    useCallback(async () => {
-      try {
-        setError("");
-        setScenarios(
-          await getManagedScenarios(),
-        );
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load scenarios.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+  const [showCreateModal, setShowCreateModal] =
+    useState(false);
+
+  const loadScenarios = useCallback(async () => {
+    try {
+      setError("");
+      setScenarios(await getManagedScenarios());
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load scenarios.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -83,6 +80,23 @@ export default function CompanyTrainingPage() {
     };
   }, [loadScenarios]);
 
+  // Close modal with Escape key.
+  useEffect(() => {
+    if (!showCreateModal) return;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowCreateModal(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [showCreateModal]);
+
   async function handleArchiveToggle(
     scenario: ManagedScenario,
   ) {
@@ -93,11 +107,13 @@ export default function CompanyTrainingPage() {
     try {
       if (scenario.is_archived) {
         await restoreScenario(scenario.id);
+
         setNotice(
           `"${scenario.name}" was restored. Trainees can practise it again.`,
         );
       } else {
         await archiveScenario(scenario.id);
+
         setNotice(
           `"${scenario.name}" was archived. Trainees no longer see it; its history is kept.`,
         );
@@ -130,6 +146,7 @@ export default function CompanyTrainingPage() {
     <div className="min-h-full bg-[var(--usus-background)]">
       <section className="px-6 py-8 md:px-8 md:py-10">
         <div className="mx-auto max-w-7xl">
+
           {/* Page heading */}
           <div>
             <p className="text-xs font-medium text-[var(--usus-primary)]">
@@ -141,13 +158,15 @@ export default function CompanyTrainingPage() {
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm text-[var(--usus-text-muted)]">
-              Create and manage the scenarios your
-              trainees practise.
+              Create and manage the scenarios your trainees
+              practise.
             </p>
           </div>
 
           {/* Actions */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+            {/* Active / Archived tabs */}
             <div
               role="tablist"
               aria-label="Scenario status"
@@ -156,10 +175,7 @@ export default function CompanyTrainingPage() {
               {(
                 [
                   ["active", `Active (${active.length})`],
-                  [
-                    "archived",
-                    `Archived (${archived.length})`,
-                  ],
+                  ["archived", `Archived (${archived.length})`],
                 ] as const
               ).map(([value, label]) => (
                 <button
@@ -180,12 +196,14 @@ export default function CompanyTrainingPage() {
               ))}
             </div>
 
-            <Link
-              href={`${area.training}/new`}
-              className="w-fit rounded-lg bg-[var(--usus-primary)] px-4 py-2 text-xs font-medium text-[#111111] transition-colors hover:bg-[var(--usus-primary-hover)]"
+            {/* New Scenario button */}
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="w-fit cursor-pointer rounded-lg bg-[var(--usus-primary)] px-4 py-2 text-xs font-medium text-[#111111] transition-colors hover:bg-[var(--usus-primary-hover)]"
             >
-              New Scenario
-            </Link>
+              + New Scenario
+            </button>
           </div>
 
           {/* Error */}
@@ -210,6 +228,8 @@ export default function CompanyTrainingPage() {
 
           {/* Scenarios */}
           <section className="mt-6 overflow-hidden rounded-[var(--usus-radius)] border border-[var(--usus-border)] bg-[var(--usus-surface)] shadow-[var(--usus-shadow)]">
+
+            {/* Table heading */}
             <div className="hidden grid-cols-[2.5fr_1fr_1fr_1fr_0.7fr_1fr] gap-4 border-b border-[var(--usus-border)] px-6 py-4 text-xs font-medium text-[var(--usus-text-muted)] md:grid">
               <span>Scenario</span>
               <span>Category</span>
@@ -221,6 +241,7 @@ export default function CompanyTrainingPage() {
               </span>
             </div>
 
+            {/* Loading and scenario list */}
             {loading ? (
               <div className="px-6 py-14 text-center text-sm text-[var(--usus-text-muted)]">
                 Loading scenarios...
@@ -239,7 +260,7 @@ export default function CompanyTrainingPage() {
                 >
                   <div className="min-w-0">
                     <Link
-                      href={`${area.training}/${scenario.id}`}
+                      href={`${area.scenarios}/${scenario.id}`}
                       className="block truncate font-medium text-[var(--usus-text)] transition-colors hover:text-[var(--usus-primary)]"
                     >
                       {scenario.name}
@@ -279,9 +300,10 @@ export default function CompanyTrainingPage() {
                     {scenario.estimated_minutes}
                   </span>
 
+                  {/* Row actions */}
                   <div className="flex flex-wrap gap-4 md:justify-end">
                     <Link
-                      href={`${area.training}/${scenario.id}`}
+                      href={`${area.scenarios}/${scenario.id}`}
                       className={rowActionClassName}
                     >
                       Edit
@@ -295,9 +317,11 @@ export default function CompanyTrainingPage() {
                       }
                       className={rowActionClassName}
                     >
-                      {scenario.is_archived
-                        ? "Restore"
-                        : "Archive"}
+                      {busyId === scenario.id
+                        ? "Please wait..."
+                        : scenario.is_archived
+                          ? "Restore"
+                          : "Archive"}
                     </button>
                   </div>
                 </div>
@@ -306,6 +330,129 @@ export default function CompanyTrainingPage() {
           </section>
         </div>
       </section>
+
+      {/* Create Scenario Modal */}
+      {showCreateModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowCreateModal(false);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-scenario-title"
+            className="w-full max-w-lg rounded-2xl border border-[var(--usus-border)] bg-[var(--usus-surface)] p-6 shadow-2xl"
+          >
+            {/* Modal heading */}
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium text-[var(--usus-primary)]">
+                  SCENARIO CREATION
+                </p>
+
+                <h2
+                  id="create-scenario-title"
+                  className="mt-2 text-xl font-semibold text-[var(--usus-text)]"
+                >
+                  How would you like to create?
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-[var(--usus-text-muted)]">
+                  Choose a creation method for your new
+                  training scenario.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Close modal"
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-lg text-[var(--usus-text-muted)] transition-colors hover:bg-[var(--usus-muted)] hover:text-[var(--usus-text)]"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Creation options */}
+            <div className="mt-7 grid gap-4 sm:grid-cols-2">
+
+              {/* Manual creation */}
+              <Link
+                href={`${area.scenarios}/new`}
+                onClick={() => setShowCreateModal(false)}
+                className="group rounded-xl border border-[var(--usus-border)] bg-[var(--usus-surface)] p-5 transition-colors hover:border-[var(--usus-primary)] hover:bg-[var(--usus-primary-soft)]/30"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--usus-border)] text-sm font-semibold text-[var(--usus-text-muted)]">
+                  M
+                </div>
+
+                <h3 className="mt-4 font-semibold text-[var(--usus-text)]">
+                  Create Manually
+                </h3>
+
+                <p className="mt-2 text-xs leading-5 text-[var(--usus-text-muted)]">
+                  Build your training scenario from scratch.
+                  Enter the details and configure the scenario
+                  yourself.
+                </p>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[var(--usus-primary)]">
+                    Start creating
+                  </span>
+
+                  <span className="text-sm text-[var(--usus-text-muted)] transition-colors group-hover:text-[var(--usus-primary)]">
+                    →
+                  </span>
+                </div>
+              </Link>
+
+              {/* AI creation */}
+              <Link
+                href={`${area.scenarios}/new-ai`}
+                onClick={() => setShowCreateModal(false)}
+                className="group rounded-xl border border-[var(--usus-border)] bg-[var(--usus-surface)] p-5 transition-colors hover:border-[var(--usus-primary)] hover:bg-[var(--usus-primary-soft)]/30"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--usus-border)] text-sm font-semibold text-[var(--usus-text-muted)]">
+                  AI
+                </div>
+
+                <h3 className="mt-4 font-semibold text-[var(--usus-text)]">
+                  Generate with AI
+                </h3>
+
+                <p className="mt-2 text-xs leading-5 text-[var(--usus-text-muted)]">
+                  Describe the training situation and let AI
+                  help generate a structured scenario.
+                </p>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[var(--usus-primary)]">
+                    Generate scenario
+                  </span>
+
+                  <span className="text-sm text-[var(--usus-text-muted)] transition-colors group-hover:text-[var(--usus-primary)]">
+                    →
+                  </span>
+                </div>
+              </Link>
+            </div>
+
+            {/* Cancel */}
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(false)}
+              className="mt-6 w-full cursor-pointer rounded-lg border border-[var(--usus-border)] px-4 py-2.5 text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:bg-[var(--usus-muted)]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
