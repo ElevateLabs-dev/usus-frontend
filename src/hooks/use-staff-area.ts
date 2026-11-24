@@ -25,7 +25,7 @@ export function useStaffArea() {
     trainees: isManager
       ? "/manager/team"
       : "/company-admin/trainees",
-    training: `${base}/training`,
+    scenarios: `${base}/scenarios`,
     performance: `${base}/performance`,
   };
 }

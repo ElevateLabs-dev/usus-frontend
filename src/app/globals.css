@@ -1141,3 +1141,55 @@ input:-webkit-autofill:active {
 .usus-landing .usus-section-label {
   font-family: var(--font-mono);
 }
+
+/* =========================================
+   USUS ORGANISATION CHECKLIST ANIMATION
+========================================= */
+
+@keyframes usus-checklist-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: var(--usus-surface);
+  }
+
+  50% {
+    box-shadow: 0 0 0 3px var(--usus-primary-soft);
+    background-color: var(--usus-primary-soft);
+  }
+}
+
+.usus-checklist-breathe {
+  animation: usus-checklist-breathe 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .usus-checklist-breathe {
+    animation: none;
+  }
+}
+
+
+/* {BREATHING ANIMATION} */
+        @keyframes usus-reminder-breathe {
+          0%,
+          100% {
+            transform: scale(1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+          }
+
+          50% {
+            transform: scale(1.07);
+            box-shadow: 0 12px 32px rgba(143, 184, 62, 0.28);
+          }
+        }
+
+        .usus-reminder-breathe {
+          animation: usus-reminder-breathe 2.5s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .usus-reminder-breathe {
+            animation: none;
+          }
+        }

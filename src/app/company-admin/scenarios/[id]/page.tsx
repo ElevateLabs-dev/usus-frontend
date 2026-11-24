@@ -93,15 +93,15 @@ export default function EditScenarioPage() {
       <section className="px-6 py-8 md:px-8 md:py-10">
         <div className="mx-auto max-w-4xl">
           <Link
-            href={area.training}
+            href={area.scenarios}
             className="text-xs font-medium text-[var(--usus-text-muted)] transition-colors hover:text-[var(--usus-primary)]"
           >
-            ← Back to Training
+            ← Back to Scenarios
           </Link>
 
           <div className="mb-8 mt-6">
             <p className="text-xs font-medium text-[var(--usus-primary)]">
-              Training
+              Scenarios
             </p>
 
             <h1 className="mt-2 text-2xl font-semibold text-[var(--usus-text)]">
@@ -139,7 +139,7 @@ export default function EditScenarioPage() {
               onSubmit={async (input) => {
                 await updateScenario(id, input);
                 router.push(
-                  area.training,
+                  area.scenarios,
                 );
               }}
             />
