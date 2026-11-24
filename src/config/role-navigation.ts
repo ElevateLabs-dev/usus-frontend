@@ -70,6 +70,10 @@ export const roleNavigation: Record<
       href: "/company-admin/subscription",
     },
     {
+      label: "Usage & Cost",
+      href: "/company-admin/usage",
+    },
+    {
       label: "Settings",
       href: "/company-admin/settings",
     },
