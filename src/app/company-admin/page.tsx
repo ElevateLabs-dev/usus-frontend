@@ -281,7 +281,7 @@ export default function CompanyAdminPage() {
             )}
 
             <QuickLink
-              href={area.training}
+              href={area.scenarios}
               title="Training scenarios"
               description={`${metric(
                 organisation?.scenarios_count,
