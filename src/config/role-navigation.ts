@@ -31,6 +31,10 @@ export const roleNavigation: Record<
       href: "/platform-admin/monitoring",
     },
     {
+      label: "Usage & Cost",
+      href: "/platform-admin/usage",
+    },
+    {
       label: "Settings",
       href: "/platform-admin/settings",
     },
