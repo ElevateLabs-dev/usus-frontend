@@ -96,30 +96,29 @@ export default function OnboardingPage() {
 
   // Verify OTP with backend
   async function handleVerifyOtp(otp: string) {
-    setError("");
+  setError("");
+  setIsLoading(true);
 
-    setIsLoading(true);
+  try {
+    await verifyCompanyEmail({
+      email: companyEmail.trim(),
+      code: otp,
+    });
 
-    try {
-      await verifyCompanyEmail({
-        email: companyEmail.trim(),
-        code: otp,
-      });
+    setIsVerified(true);
 
-      setIsVerified(true);
+    window.setTimeout(() => {
+      router.replace(routeUtils.company_admin[0].href);
+    }, 2000);
 
-      setTimeout(() => {
-      router.push(routeUtils.company_admin[0].href); // Redirect to the company admin dashboard
-      }, 1000);
-
-      // The backend has now created the organisation
-      // and issued the authentication tokens.
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
+    // The backend has created the organisation
+    // and issued the authentication tokens.
+  } catch (err) {
+    setError(getErrorMessage(err));
+  } finally {
+    setIsLoading(false);
   }
+}
 
   // Request another OTP using the original signup details
   async function handleResendOtp(): Promise<number | null> {
