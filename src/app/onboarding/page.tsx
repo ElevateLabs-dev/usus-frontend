@@ -14,6 +14,9 @@ import {
   type CompanySignupRequest,
 } from "@/services/auth-service";
 
+import {useRouter} from "next/navigation";
+import { routeUtils } from "@/config/role-navigation";
+
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -30,6 +33,8 @@ export default function OnboardingPage() {
   const [otherCompanyType, setOtherCompanyType] = useState("");
   const [otherReferralSource, setOtherReferralSource] = useState("");
 
+
+  const router = useRouter();
   // Step 3: Verification
   const [signupData, setSignupData] =
     useState<CompanySignupRequest | null>(null);
@@ -102,6 +107,10 @@ export default function OnboardingPage() {
       });
 
       setIsVerified(true);
+
+      setTimeout(() => {
+      router.push(routeUtils.company_admin[0].href); // Redirect to the company admin dashboard
+      }, 1000);
 
       // The backend has now created the organisation
       // and issued the authentication tokens.
