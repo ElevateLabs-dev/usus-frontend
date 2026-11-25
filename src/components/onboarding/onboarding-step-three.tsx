@@ -1,55 +1,79 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ClipboardEvent,
+} from "react";
 
 interface OnboardingStepThreeProps {
   companyEmail: string;
-  onVerify: (otp: string) => void;
-  onResend: () => void;
+  resendIn: number;
+  isLoading: boolean;
+  error: string;
+  isVerified: boolean;
+
+  onVerify: (otp: string) => Promise<void>;
+  onResend: () => Promise<number | null>;
   onBack: () => void;
 }
 
 export function OnboardingStepThree({
   companyEmail,
+  resendIn,
+  isLoading,
+  error,
+  isVerified,
   onVerify,
   onResend,
   onBack,
 }: OnboardingStepThreeProps) {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [countdown, setCountdown] = useState(60);
-  const [error, setError] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [countdown, setCountdown] = useState(resendIn);
+  const [localError, setLocalError] = useState("");
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Countdown timer
   useEffect(() => {
     if (countdown <= 0) return;
 
-    const timer = setTimeout(() => {
-      setCountdown((previous) => previous - 1);
+    const timer = window.setTimeout(() => {
+      setCountdown((current) => Math.max(0, current - 1));
     }, 1000);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, [countdown]);
 
-  const handleChange = (value: string, index: number) => {
+  // Handle individual OTP input
+  function handleChange(value: string, index: number) {
     const digit = value.replace(/\D/g, "").slice(-1);
 
-    const updatedOtp = [...otp];
-    updatedOtp[index] = digit;
+    setOtp((current) => {
+      const updated = [...current];
+      updated[index] = digit;
+      return updated;
+    });
 
-    setOtp(updatedOtp);
-    setError("");
+    setLocalError("");
 
     if (digit && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
-  };
+  }
 
-  const handleKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    if (event.key === "Backspace" && !otp[index] && index > 0) {
+  // Handle keyboard navigation
+  function handleKeyDown(
+    event: KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) {
+    if (
+      event.key === "Backspace" &&
+      !otp[index] &&
+      index > 0
+    ) {
       inputRefs.current[index - 1]?.focus();
     }
 
@@ -60,139 +84,211 @@ export function OnboardingStepThree({
     if (event.key === "ArrowRight" && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
-  };
+  }
 
-  const handlePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+  // Handle pasting a complete OTP
+  function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
     event.preventDefault();
 
-    const pastedCode = event.clipboardData
+    const pasted = event.clipboardData
       .getData("text")
       .replace(/\D/g, "")
       .slice(0, 6);
 
-    if (!pastedCode) return;
+    if (!pasted) return;
 
-    const updatedOtp = Array.from({ length: 6 }, (_, index) =>
-      pastedCode[index] || ""
-    );
+    const digits = Array(6).fill("");
 
-    setOtp(updatedOtp);
-    setError("");
+    pasted.split("").forEach((digit, index) => {
+      digits[index] = digit;
+    });
 
-    const nextEmptyIndex = updatedOtp.findIndex((digit) => !digit);
+    setOtp(digits);
+    setLocalError("");
 
-    inputRefs.current[
-      nextEmptyIndex === -1 ? 5 : nextEmptyIndex
-    ]?.focus();
-  };
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  // Verify OTP
+  async function handleVerify() {
     const code = otp.join("");
 
     if (code.length !== 6) {
-      setError("Please enter the complete 6-digit verification code.");
+      setLocalError(
+        "Please enter the complete 6-digit verification code.",
+      );
       return;
     }
 
-    onVerify(code);
-  };
+    setLocalError("");
 
-  const handleResend = () => {
-    if (countdown > 0) return;
+    await onVerify(code);
+  }
 
-    setOtp(["", "", "", "", "", ""]);
-    setError("");
-    setCountdown(60);
+  // Resend OTP
+  async function handleResend() {
+    if (countdown > 0 || isLoading) return;
 
-    onResend();
-    inputRefs.current[0]?.focus();
-  };
+    setLocalError("");
+
+    const newCountdown = await onResend();
+
+    // Only reset the OTP when the backend confirms success.
+    if (newCountdown !== null) {
+      setCountdown(newCountdown);
+      setOtp(Array(6).fill(""));
+      inputRefs.current[0]?.focus();
+    }
+  }
+
+  // Successful verification screen
+  if (isVerified) {
+    return (
+      <div className="mx-auto w-full max-w-xl text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--usus-primary-soft)]">
+          <span className="text-2xl font-semibold text-[var(--usus-primary)]">
+            ✓
+          </span>
+        </div>
+
+        <h1 className="mt-6 text-2xl font-semibold text-[var(--usus-text)]">
+          Email verified successfully
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-[var(--usus-text-muted)]">
+          Your company account has been created and you are now signed in.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-xl">
+      {/* Heading */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-[var(--usus-text)]">
-          Verify your email
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--usus-primary)]">
+          Step 3 of 3
+        </p>
+
+        <h1 className="mt-3 text-2xl font-semibold text-[var(--usus-text)]">
+          Verify your email address
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-[var(--usus-text-muted)]">
-          Enter the 6-digit verification code sent to your company email address.
+          We have sent a verification code to{" "}
+          <span className="font-semibold text-[var(--usus-text)]">
+            {companyEmail}
+          </span>
+          . Enter the six-digit code below.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <label className="text-sm font-medium text-[var(--usus-text)]">
-          Verification code
-        </label>
+      {/* OTP inputs */}
+      <div className="flex justify-center gap-2 sm:gap-3">
+        {otp.map((digit, index) => (
+          <input
+            key={index}
+            ref={(element) => {
+              inputRefs.current[index] = element;
+            }}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={1}
+            value={digit}
+            disabled={isLoading}
+            onChange={(event) =>
+              handleChange(event.target.value, index)
+            }
+            onKeyDown={(event) =>
+              handleKeyDown(event, index)
+            }
+            onPaste={handlePaste}
+            aria-label={`Verification digit ${index + 1}`}
+            className="
+              h-12 w-11 rounded-lg border
+              border-[var(--usus-border)]
+              bg-[var(--usus-surface)]
+              text-center text-lg font-semibold
+              text-[var(--usus-text)]
+              outline-none transition-colors
+              focus:border-[var(--usus-primary)]
+              disabled:opacity-60
+              sm:h-14 sm:w-14
+            "
+          />
+        ))}
+      </div>
 
-        <div className="mt-3 flex justify-between gap-2">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(element) => {
-                inputRefs.current[index] = element;
-              }}
-              type="text"
-              inputMode="numeric"
-              autoComplete={index === 0 ? "one-time-code" : "off"}
-              maxLength={1}
-              value={digit}
-              onChange={(event) =>
-                handleChange(event.target.value, index)
-              }
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              onPaste={handlePaste}
-              aria-label={`Verification code digit ${index + 1}`}
-              className="h-12 w-full min-w-0 border border-[var(--usus-border)] bg-[var(--usus-surface)] text-center text-lg font-semibold text-[var(--usus-text)] outline-none transition focus:border-[var(--usus-primary)] focus:ring-2 focus:ring-[var(--usus-primary-soft)]"
-            />
-          ))}
-        </div>
+      {/* Error messages */}
+      {(localError || error) && (
+        <p
+          role="alert"
+          className="
+            mt-4 border border-red-500/30
+            bg-red-500/10 p-3
+            text-sm text-red-600
+          "
+        >
+          {localError || error}
+        </p>
+      )}
 
-        {error && (
-          <p className="mt-3 text-sm text-[var(--usus-danger)]" role="alert">
-            {error}
-          </p>
-        )}
+      {/* Verify button */}
+      <button
+        type="button"
+        onClick={handleVerify}
+        disabled={isLoading || otp.some((digit) => !digit)}
+        className="
+          mt-7 flex h-12 w-full items-center justify-center
+          rounded-lg bg-[var(--usus-primary)]
+          px-6 text-sm font-semibold text-black
+          transition-colors hover:bg-[var(--usus-primary-hover)]
+          disabled:cursor-not-allowed disabled:opacity-50
+        "
+      >
+        {isLoading ? "Verifying..." : "Verify email"}
+      </button>
 
-        <div className="mt-6 flex items-center justify-between text-sm">
-          <span className="text-[var(--usus-text-muted)]">
-            Didn&apos;t receive the code?
-          </span>
+      {/* Resend code */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-[var(--usus-text-muted)]">
+          Didn&apos;t receive the code?
+        </p>
 
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={countdown > 0}
-            className="font-medium text-[var(--usus-primary)] transition hover:text-[var(--usus-primary-hover)] disabled:cursor-not-allowed disabled:text-[var(--usus-text-soft)]"
-          >
-            {countdown > 0
-              ? `Resend in ${countdown}s`
-              : "Resend code"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={countdown > 0 || isLoading}
+          className="
+            mt-2 text-sm font-semibold
+            text-[var(--usus-primary)]
+            transition-colors hover:underline
+            disabled:cursor-not-allowed disabled:opacity-50
+          "
+        >
+          {countdown > 0
+            ? `Resend code in ${countdown}s`
+            : "Resend verification code"}
+        </button>
+      </div>
 
-        <div className="mt-8 flex gap-4">
-          <button
-            type="button"
-            onClick={onBack}
-            className="h-12 flex-1 border border-[var(--usus-border)] bg-[var(--usus-surface)] text-sm font-semibold text-[var(--usus-text)] transition hover:bg-[var(--usus-surface-soft)]"
-          >
-            Back
-          </button>
+      {/* Back button */}
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={isLoading}
+        className="
+          mt-8 w-full text-center text-sm
+          text-[var(--usus-text-muted)]
+          transition-colors hover:text-[var(--usus-text)]
+          disabled:opacity-50
+        "
+      >
+        Back
+      </button>
 
-          <button
-            type="submit"
-            disabled={otp.some((digit) => !digit)}
-            className="h-12 flex-1 border border-[var(--usus-primary)] bg-[var(--usus-primary)] text-sm font-semibold text-[#252624] transition hover:bg-[var(--usus-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Verify Email
-          </button>
-        </div>
-      </form>
-
-      <p className="mt-10 text-center text-xs text-[var(--usus-text-soft)]">
+      <p className="mt-8 text-center text-xs text-[var(--usus-text-muted)]">
         Powered by Elevate Labs
       </p>
     </div>

@@ -8,55 +8,133 @@ import { OnboardingStepOne } from "@/components/onboarding/onboarding-step-one";
 import { OnboardingStepTwo } from "@/components/onboarding/onboarding-step-two";
 import { OnboardingStepThree } from "@/components/onboarding/onboarding-step-three";
 
+import {
+  signupCompany,
+  verifyCompanyEmail,
+  type CompanySignupRequest,
+} from "@/services/auth-service";
+
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Screen 1: Organisation information
+  // Step 1: Company information
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Screen 2: Company details
+  // Step 2: Company details
   const [companyType, setCompanyType] = useState("");
   const [referralSource, setReferralSource] = useState("");
   const [otherCompanyType, setOtherCompanyType] = useState("");
   const [otherReferralSource, setOtherReferralSource] = useState("");
 
-  // Screen 3: Email verification
-  const [isVerified, setIsVerified] = useState(false);
+  // Step 3: Verification
+  const [signupData, setSignupData] =
+    useState<CompanySignupRequest | null>(null);
 
-  const onboardingData = {
+  const [resendIn, setResendIn] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [error, setError] = useState("");
+
+  const onboardingData: CompanySignupRequest = {
     company_name: companyName.trim(),
-    company_email: companyEmail.trim(),
+    email: companyEmail.trim(),
     full_name: fullName.trim(),
+    password,
     company_type:
-      companyType === "Other" ? otherCompanyType.trim() : companyType,
+      companyType === "Other"
+        ? otherCompanyType.trim()
+        : companyType,
     referral_source:
       referralSource === "Other"
         ? otherReferralSource.trim()
         : referralSource,
   };
 
-  const handleSendOtp = () => {
-    console.log("OTP should be sent to:", companyEmail);
-    console.log("Onboarding information:", onboardingData);
+  function getErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message;
+    }
 
-    // Backend OTP sending will be connected here.
-    setCurrentStep(3);
-  };
+    return "Something went wrong. Please try again.";
+  }
 
-  const handleVerifyOtp = (otp: string) => {
-    console.log("OTP entered:", otp);
+  // Submit company registration and request OTP
+  async function handleSendOtp() {
+    setError("");
 
-    // Backend OTP verification will be connected here.
-    // Do not mark the user as verified until the backend confirms it.
-  };
+    if (
+      !onboardingData.company_type ||
+      !onboardingData.referral_source
+    ) {
+      setError("Please complete all company details.");
+      return;
+    }
 
-  const handleResendOtp = () => {
-    console.log("A new OTP should be sent to:", companyEmail);
+    setIsLoading(true);
 
-    // Backend OTP resend will be connected here.
-  };
+    try {
+      const response = await signupCompany(onboardingData);
+
+      setSignupData(onboardingData);
+      setResendIn(response.resend_in);
+      setCurrentStep(3);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Verify OTP with backend
+  async function handleVerifyOtp(otp: string) {
+    setError("");
+
+    setIsLoading(true);
+
+    try {
+      await verifyCompanyEmail({
+        email: companyEmail.trim(),
+        code: otp,
+      });
+
+      setIsVerified(true);
+
+      // The backend has now created the organisation
+      // and issued the authentication tokens.
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Request another OTP using the original signup details
+  async function handleResendOtp(): Promise<number | null> {
+  if (!signupData) {
+    setError("Your registration details could not be found.");
+    return null;
+  }
+
+  setError("");
+  setIsLoading(true);
+
+  try {
+    const response = await signupCompany(signupData);
+
+    setResendIn(response.resend_in);
+
+    return response.resend_in;
+  } catch (err) {
+    setError(getErrorMessage(err));
+    return null;
+  } finally {
+    setIsLoading(false);
+  }
+}
 
   return (
     <OnboardingLayout>
@@ -67,34 +145,68 @@ export default function OnboardingPage() {
           companyName={companyName}
           companyEmail={companyEmail}
           fullName={fullName}
+          password={password}
+          confirmPassword={confirmPassword}
           onCompanyNameChange={setCompanyName}
           onCompanyEmailChange={setCompanyEmail}
           onFullNameChange={setFullName}
-          onContinue={() => setCurrentStep(2)}
+          onPasswordChange={setPassword}
+          onConfirmPasswordChange={setConfirmPassword}
+          onContinue={() => {
+            setError("");
+            setCurrentStep(2);
+          }}
         />
       )}
 
       {currentStep === 2 && (
-        <OnboardingStepTwo
-          companyType={companyType}
-          referralSource={referralSource}
-          otherCompanyType={otherCompanyType}
-          otherReferralSource={otherReferralSource}
-          onCompanyTypeChange={setCompanyType}
-          onReferralSourceChange={setReferralSource}
-          onOtherCompanyTypeChange={setOtherCompanyType}
-          onOtherReferralSourceChange={setOtherReferralSource}
-          onContinue={handleSendOtp}
-          onBack={() => setCurrentStep(1)}
-        />
+        <div>
+          {error && (
+            <p
+              role="alert"
+              className="mb-4 border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600"
+            >
+              {error}
+            </p>
+          )}
+
+          <OnboardingStepTwo
+            companyType={companyType}
+            referralSource={referralSource}
+            otherCompanyType={otherCompanyType}
+            otherReferralSource={otherReferralSource}
+            onCompanyTypeChange={setCompanyType}
+            onReferralSourceChange={setReferralSource}
+            onOtherCompanyTypeChange={setOtherCompanyType}
+            onOtherReferralSourceChange={setOtherReferralSource}
+            onContinue={handleSendOtp}
+            onBack={() => {
+              setError("");
+              setCurrentStep(1);
+            }}
+          />
+
+          {isLoading && (
+            <p className="mt-4 text-center text-sm text-[var(--usus-text-muted)]">
+              Sending verification code...
+            </p>
+          )}
+        </div>
       )}
 
       {currentStep === 3 && (
         <OnboardingStepThree
           companyEmail={companyEmail}
+          resendIn={resendIn}
+          isLoading={isLoading}
+          error={error}
+          isVerified={isVerified}
           onVerify={handleVerifyOtp}
           onResend={handleResendOtp}
-          onBack={() => setCurrentStep(2)}
+          onBack={() => {
+            setError("");
+            setCurrentStep(2);
+          }}
         />
       )}
     </OnboardingLayout>

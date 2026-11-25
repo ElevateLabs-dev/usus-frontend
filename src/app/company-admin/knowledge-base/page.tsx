@@ -2,12 +2,21 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type DragEvent,
 } from "react";
+
+import {
+  deleteKnowledgeBaseDocument,
+  getKnowledgeBaseDocument,
+  getKnowledgeBaseDocuments,
+  uploadKnowledgeBaseDocument,
+  type KnowledgeBaseDocument,
+} from "@/services/knowledge-base-service";
 
 type Tab =
   | "upload"
@@ -17,23 +26,8 @@ type Tab =
   | "manage"
   | "settings";
 
-type DocumentStatus =
-  | "Uploaded"
-  | "Processing"
-  | "Indexed"
-  | "Failed";
+type DocumentStatus = "processing" | "ready" | "failed";
 
-interface KnowledgeDocument {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  chunks: number;
-  createdAt: string;
-  updatedAt: string;
-  status: DocumentStatus;
-  file?: File;
-}
 
 const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: "upload", label: "Upload", icon: "upload" },
@@ -44,32 +38,11 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
   { id: "settings", label: "Settings", icon: "settings" },
 ];
 
-const acceptedExtensions = [
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".txt",
-  ".csv",
-  ".md",
-  ".xlsx",
-  ".pptx",
-];
+const acceptedExtensions = [".pdf", ".docx"];
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-function getFileType(name: string) {
-  const extension = name.split(".").pop()?.toLowerCase() ?? "";
-
-  const types: Record<string, string> = {
-    pdf: "PDF",
-    doc: "Word",
-    docx: "Word",
-    txt: "Text",
-    csv: "CSV",
-    md: "Markdown",
-    xlsx: "Excel",
-    pptx: "PowerPoint",
-  };
-
-  return types[extension] ?? "Unknown";
+function getFileType(fileType: string) {
+  return fileType.toUpperCase();
 }
 
 function formatFileSize(bytes: number) {
@@ -216,102 +189,152 @@ export default function KnowledgeBasePage() {
   const [activeTab, setActiveTab] =
     useState<Tab>("documents");
 
-  const [documents, setDocuments] = useState<
-    KnowledgeDocument[]
-  >([]);
-
+  const [documents, setDocuments] = useState<KnowledgeBaseDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pageError, setPageError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [isDragging, setIsDragging] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
-  const [selectedDocument, setSelectedDocument] =
-    useState<string[]>([]);
-
-  const [confirmDelete, setConfirmDelete] =
-    useState<string | null>(null);
-
+  const [selectedDocument, setSelectedDocument] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [autoIndex, setAutoIndex] = useState(true);
-  const [notifyOnCompletion, setNotifyOnCompletion] =
-    useState(true);
+  const [notifyOnCompletion, setNotifyOnCompletion] = useState(true);
 
-  /* ============================================================
-     FILE UPLOAD - FRONTEND ONLY
-  ============================================================ */
-
-  const handleFiles = useCallback((files: FileList | File[]) => {
-    const selectedFiles = Array.from(files);
-
-    const validFiles: KnowledgeDocument[] = [];
-    const rejectedFiles: string[] = [];
-
-    for (const file of selectedFiles) {
-      const extension = `.${file.name
-        .split(".")
-        .pop()
-        ?.toLowerCase()}`;
-
-      if (!acceptedExtensions.includes(extension)) {
-        rejectedFiles.push(file.name);
-        continue;
-      }
-
-      const exists = documents.some(
-        (document) =>
-          document.name === file.name &&
-          document.size === file.size,
+  const refreshDocuments = useCallback(async (showLoading = false) => {
+    if (showLoading) setIsRefreshing(true);
+    try {
+      const result = await getKnowledgeBaseDocuments();
+      setDocuments(result);
+      setPageError("");
+      setSelectedDocument((current) =>
+        current.filter((id) => result.some((document) => document.id === id)),
       );
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Unable to load knowledge base documents.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
 
-      if (exists) {
-        rejectedFiles.push(`${file.name} (already added)`);
-        continue;
+  useEffect(() => {
+    let active = true;
+
+    async function loadDocuments() {
+      try {
+        const result = await getKnowledgeBaseDocuments();
+
+        if (!active) return;
+
+        setDocuments(result);
+        setPageError("");
+      } catch (error) {
+        if (!active) return;
+
+        setPageError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load knowledge base documents.",
+        );
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
       }
+    }
 
-      validFiles.push({
-        id: crypto.randomUUID(),
-        name: file.name,
-        type: getFileType(file.name),
-        size: file.size,
-        chunks: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        status: "Uploaded",
-        file,
+    void loadDocuments();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Processing is asynchronous on the backend. Refresh processing records until
+  // the API reports their final status (ready or failed).
+  useEffect(() => {
+    const processingIds = documents
+      .filter((document) => document.status === "processing")
+      .map((document) => document.id);
+
+    if (processingIds.length === 0) return;
+
+    const timer = window.setInterval(async () => {
+      const updates = await Promise.allSettled(
+        processingIds.map((id) => getKnowledgeBaseDocument(id)),
+      );
+      const byId = new Map<string, KnowledgeBaseDocument>();
+      updates.forEach((result) => {
+        if (result.status === "fulfilled") byId.set(result.value.id, result.value);
       });
-    }
+      if (byId.size > 0) {
+        setDocuments((current) =>
+          current.map((document) => byId.get(document.id) ?? document),
+        );
+      }
+    }, 4000);
 
-    if (validFiles.length > 0) {
-      setDocuments((previous) => [
-        ...validFiles,
-        ...previous,
-      ]);
-
-      setUploadMessage(
-        `${validFiles.length} document(s) added locally. Backend upload is not connected yet.`,
-      );
-    } else if (rejectedFiles.length > 0) {
-      setUploadMessage(
-        `No documents added. Check file formats and duplicates.`,
-      );
-    }
-
-    if (rejectedFiles.length > 0) {
-      setUploadMessage((previous) =>
-        `${previous} ${rejectedFiles.length} file(s) were skipped.`,
-      );
-    }
-
-    setActiveTab("documents");
-
-    window.setTimeout(() => {
-      setUploadMessage("");
-    }, 7000);
+    return () => window.clearInterval(timer);
   }, [documents]);
 
-  function onFileChange(
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files);
+    const rejectedFiles: string[] = [];
+    const uploadedFiles: string[] = [];
+
+    setIsUploading(true);
+    setUploadMessage("");
+    setPageError("");
+
+    for (const file of selectedFiles) {
+      const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
+
+      if (!acceptedExtensions.includes(extension)) {
+        rejectedFiles.push(`${file.name} (only PDF and DOCX are supported)`);
+        continue;
+      }
+
+      if (file.size > MAX_FILE_SIZE) {
+        rejectedFiles.push(`${file.name} (exceeds the 20 MB limit)`);
+        continue;
+      }
+
+      try {
+        const uploaded = await uploadKnowledgeBaseDocument(file);
+        setDocuments((current) => [
+          uploaded,
+          ...current.filter((document) => document.id !== uploaded.id),
+        ]);
+        uploadedFiles.push(file.name);
+      } catch (error) {
+        rejectedFiles.push(
+          `${file.name} (${error instanceof Error ? error.message : "upload failed"})`,
+        );
+      }
+    }
+
+    if (uploadedFiles.length > 0) {
+      setUploadMessage(
+        `${uploadedFiles.length} document(s) uploaded. Processing status is provided by the backend.`,
+      );
+    }
+    if (rejectedFiles.length > 0) {
+      setUploadMessage((current) =>
+        [current, `Not uploaded: ${rejectedFiles.join("; ")}`].filter(Boolean).join(" "),
+      );
+    }
+
+    setIsUploading(false);
+    setActiveTab("documents");
+    await refreshDocuments();
+  }, [refreshDocuments]);
+
+  function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     if (event.target.files) {
-      handleFiles(event.target.files);
+      void handleFiles(event.target.files);
       event.target.value = "";
     }
   }
@@ -319,77 +342,66 @@ export default function KnowledgeBasePage() {
   function onDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setIsDragging(false);
-
     if (event.dataTransfer.files.length > 0) {
-      handleFiles(event.dataTransfer.files);
+      void handleFiles(event.dataTransfer.files);
     }
   }
-
-  /* ============================================================
-     DOCUMENT MANAGEMENT
-  ============================================================ */
 
   const filteredDocuments = useMemo(() => {
     let result = [...documents];
 
     if (activeTab === "recent") {
       result = result.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() -
-          new Date(a.createdAt).getTime(),
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
     }
 
     if (search.trim()) {
       const query = search.toLowerCase();
-
       result = result.filter((document) =>
-        document.name.toLowerCase().includes(query),
+        document.filename.toLowerCase().includes(query),
       );
     }
 
     if (filter !== "All") {
-      result = result.filter(
-        (document) => document.status === filter,
-      );
+      result = result.filter((document) => document.status === filter);
     }
 
     return result;
   }, [documents, activeTab, search, filter]);
 
   const totalSize = documents.reduce(
-    (total, document) => total + document.size,
+    (total, document) => total + document.size_bytes,
     0,
   );
+  const readyCount = documents.filter((document) => document.status === "ready").length;
+  const failedCount = documents.filter((document) => document.status === "failed").length;
 
-  const indexedCount = documents.filter(
-    (document) => document.status === "Indexed",
-  ).length;
-
-  const failedCount = documents.filter(
-    (document) => document.status === "Failed",
-  ).length;
-
-  function deleteDocument(id: string) {
-    setDocuments((previous) =>
-      previous.filter((document) => document.id !== id),
-    );
-
-    setSelectedDocument((previous) =>
-      previous.filter((selectedId) => selectedId !== id),
-    );
-
-    setConfirmDelete(null);
+  async function deleteDocument(id: string) {
+    try {
+      await deleteKnowledgeBaseDocument(id);
+      setDocuments((previous) => previous.filter((document) => document.id !== id));
+      setSelectedDocument((previous) => previous.filter((selectedId) => selectedId !== id));
+      setConfirmDelete(null);
+      setUploadMessage("Document deleted.");
+    } catch (error) {
+      setPageError(error instanceof Error ? error.message : "Unable to delete document.");
+    }
   }
 
-  function deleteSelected() {
-    setDocuments((previous) =>
-      previous.filter(
-        (document) => !selectedDocument.includes(document.id),
-      ),
+  async function deleteSelected() {
+    const ids = [...selectedDocument];
+    const results = await Promise.allSettled(ids.map((id) => deleteKnowledgeBaseDocument(id)));
+    const deletedIds = ids.filter((_, index) => results[index].status === "fulfilled");
+    setDocuments((current) => current.filter((document) => !deletedIds.includes(document.id)));
+    setSelectedDocument((current) => current.filter((id) => !deletedIds.includes(id)));
+    const failed = results.length - deletedIds.length;
+    setUploadMessage(
+      failed === 0
+        ? `${deletedIds.length} document(s) deleted.`
+        : `${deletedIds.length} document(s) deleted; ${failed} could not be deleted.`,
     );
-
-    setSelectedDocument([]);
+    if (failed > 0) await refreshDocuments();
   }
 
   function toggleSelected(id: string) {
@@ -436,13 +448,22 @@ export default function KnowledgeBasePage() {
 
           <button
             type="button"
-            onClick={() => setActiveTab("documents")}
+            onClick={() => void refreshDocuments(true)}
+            disabled={isRefreshing}
             className="inline-flex items-center justify-center gap-2 border border-[var(--usus-border)] bg-[var(--usus-surface)] px-4 py-2 text-sm text-[var(--usus-text)] transition-colors hover:bg-[var(--usus-surface-soft)]"
           >
             <Icon name="refresh" size={15} />
-            Refresh
+            {isRefreshing ? "Refreshing..." : "Refresh"}
           </button>
         </div>
+
+        {/* API ERROR */}
+
+        {pageError && (
+          <div className="border border-[var(--usus-danger)] bg-[var(--usus-surface-soft)] px-4 py-3 text-sm text-[var(--usus-danger)]">
+            {pageError}
+          </div>
+        )}
 
         {/* UPLOAD NOTIFICATION */}
 
@@ -479,10 +500,10 @@ export default function KnowledgeBasePage() {
             className="border border-[var(--usus-border)] bg-[var(--usus-surface)] px-4 py-2.5 text-sm text-[var(--usus-text)] outline-none focus:border-[var(--usus-primary)]"
           >
             <option value="All">All statuses</option>
-            <option value="Uploaded">Uploaded</option>
-            <option value="Processing">Processing</option>
-            <option value="Indexed">Indexed</option>
-            <option value="Failed">Failed</option>
+            
+            <option value="processing">processing</option>
+            <option value="ready">ready</option>
+            <option value="failed">failed</option>
           </select>
 
           <button
@@ -522,7 +543,11 @@ export default function KnowledgeBasePage() {
             )}
           </div>
 
-          {filteredDocuments.length === 0 ? (
+          {isLoading ? (
+            <div className="px-6 py-16 text-center text-sm text-[var(--usus-text-muted)]">
+              Loading documents from the backend...
+            </div>
+          ) : filteredDocuments.length === 0 ? (
             <div className="px-6 py-16 text-center">
 
               <div className="mx-auto flex h-14 w-14 items-center justify-center bg-[var(--usus-surface-soft)] text-[var(--usus-text-muted)]">
@@ -567,7 +592,7 @@ export default function KnowledgeBasePage() {
                         checked={
                           filteredDocuments.length > 0 &&
                           selectedDocument.length ===
-                            filteredDocuments.length
+                          filteredDocuments.length
                         }
                         onChange={toggleAll}
                         aria-label="Select all documents"
@@ -588,7 +613,7 @@ export default function KnowledgeBasePage() {
                     </th>
 
                     <th className="px-4 py-3 text-xs font-semibold text-[var(--usus-text-muted)]">
-                      Chunks
+                      Characters
                     </th>
 
                     <th className="px-4 py-3 text-xs font-semibold text-[var(--usus-text-muted)]">
@@ -596,7 +621,7 @@ export default function KnowledgeBasePage() {
                     </th>
 
                     <th className="px-4 py-3 text-xs font-semibold text-[var(--usus-text-muted)]">
-                      Uploaded
+                      Created
                     </th>
 
                     <th className="px-4 py-3 text-right text-xs font-semibold text-[var(--usus-text-muted)]">
@@ -623,7 +648,7 @@ export default function KnowledgeBasePage() {
                           onChange={() =>
                             toggleSelected(document.id)
                           }
-                          aria-label={`Select ${document.name}`}
+                          aria-label={`Select ${document.filename}`}
                           className="accent-[var(--usus-primary)]"
                         />
                       </td>
@@ -638,29 +663,34 @@ export default function KnowledgeBasePage() {
                           <div className="min-w-0">
                             <p
                               className="truncate text-sm font-medium text-[var(--usus-text)]"
-                              title={document.name}
+                              title={document.filename}
                             >
-                              {document.name}
+                              {document.filename}
                             </p>
 
                             <p className="mt-1 text-xs text-[var(--usus-text-soft)]">
                               {document.id.slice(0, 8)}
                             </p>
+                            {document.error && (
+                              <p className="mt-1 text-xs text-[var(--usus-danger)]" title={document.error}>
+                                {document.error}
+                              </p>
+                            )}
                           </div>
 
                         </div>
                       </td>
 
                       <td className="px-4 py-4 text-sm text-[var(--usus-text-muted)]">
-                        {document.type}
+                        {getFileType(document.file_type)}
                       </td>
 
                       <td className="px-4 py-4 text-sm text-[var(--usus-text-muted)]">
-                        {formatFileSize(document.size)}
+                        {formatFileSize(document.size_bytes)}
                       </td>
 
                       <td className="px-4 py-4 text-sm text-[var(--usus-text-muted)]">
-                        {document.chunks || "—"}
+                        {document.char_count.toLocaleString()}
                       </td>
 
                       <td className="px-4 py-4">
@@ -668,7 +698,7 @@ export default function KnowledgeBasePage() {
                       </td>
 
                       <td className="px-4 py-4 text-sm text-[var(--usus-text-muted)]">
-                        {formatDate(document.createdAt)}
+                        {formatDate(document.created_at)}
                       </td>
 
                       <td className="px-4 py-4 text-right">
@@ -724,11 +754,10 @@ export default function KnowledgeBasePage() {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={onDrop}
-          className={`flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed px-6 py-12 text-center transition-colors ${
-            isDragging
+          className={`flex min-h-[300px] flex-col items-center justify-center border-2 border-dashed px-6 py-12 text-center transition-colors ${isDragging
               ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
               : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
-          }`}
+            }`}
         >
 
           <div className="flex h-16 w-16 items-center justify-center bg-[var(--usus-surface-soft)] text-[var(--usus-primary)]">
@@ -746,9 +775,10 @@ export default function KnowledgeBasePage() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
             className="mt-6 bg-[var(--usus-primary)] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[var(--usus-primary-hover)]"
           >
-            Browse files
+            {isUploading ? "Uploading..." : "Browse files"}
           </button>
 
           <input
@@ -761,7 +791,7 @@ export default function KnowledgeBasePage() {
           />
 
           <p className="mt-5 text-xs text-[var(--usus-text-soft)]">
-            Supported formats: PDF, DOC, DOCX, TXT, CSV, MD, XLSX and PPTX
+            Supported formats: PDF and DOCX. Maximum file size: 20 MB.
           </p>
 
         </div>
@@ -815,7 +845,7 @@ export default function KnowledgeBasePage() {
             </div>
 
             <p className="mt-2 text-sm text-[var(--usus-text-muted)]">
-              {documents.length} document(s) currently added in this browser session.
+              {documents.length} document(s) in your knowledge base.
             </p>
           </div>
         )}
@@ -859,7 +889,7 @@ export default function KnowledgeBasePage() {
           </div>
 
           <p className="mt-3 text-xs text-[var(--usus-text-soft)]">
-            Document name search is available locally. Full-text and semantic search will be connected to the backend.
+            Search filters the documents returned by the backend by filename. Full-text and semantic search are not available through the current API.
           </p>
 
         </div>
@@ -886,11 +916,11 @@ export default function KnowledgeBasePage() {
 
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-[var(--usus-text)]">
-                        {document.name}
+                        {document.filename}
                       </p>
 
                       <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
-                        {document.type} · {formatFileSize(document.size)}
+                        {getFileType(document.file_type)} · {formatFileSize(document.size_bytes)}
                       </p>
                     </div>
                   </div>
@@ -928,14 +958,14 @@ export default function KnowledgeBasePage() {
 
           <SettingRow
             title="Automatic indexing"
-            description="Automatically index documents after they are uploaded. This setting will take effect when backend processing is connected."
+            description="Document processing is handled automatically by the backend. This control is a local preference and is not saved by the API."
             checked={autoIndex}
             onChange={setAutoIndex}
           />
 
           <SettingRow
             title="Processing notifications"
-            description="Receive notifications when document processing is completed."
+            description="The current API does not provide notification settings. This control is a local preference only."
             checked={notifyOnCompletion}
             onChange={setNotifyOnCompletion}
           />
@@ -972,17 +1002,17 @@ export default function KnowledgeBasePage() {
 
             <div>
               <p className="text-xs text-[var(--usus-text-muted)]">
-                Indexed documents
+                Ready documents
               </p>
 
               <p className="mt-2 text-2xl font-semibold text-[var(--usus-text)]">
-                {indexedCount}
+                {readyCount}
               </p>
             </div>
 
             <div>
               <p className="text-xs text-[var(--usus-text-muted)]">
-                Failed documents
+                failed documents
               </p>
 
               <p className="mt-2 text-2xl font-semibold text-[var(--usus-text)]">
@@ -993,7 +1023,7 @@ export default function KnowledgeBasePage() {
           </div>
 
           <p className="mt-5 text-xs text-[var(--usus-text-soft)]">
-            Storage figures reflect files added in this browser session only. Server storage limits will be shown after backend integration.
+            Storage figures are calculated from the documents returned by the backend.
           </p>
 
         </div>
@@ -1038,6 +1068,19 @@ export default function KnowledgeBasePage() {
 
       </div>
 
+      {pageError && (
+        <div className="border border-[var(--usus-danger)] bg-[var(--usus-surface-soft)] px-4 py-3 text-sm text-[var(--usus-danger)]">
+          {pageError}
+          <button
+            type="button"
+            onClick={() => setPageError("")}
+            className="ml-3 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* SUMMARY CARDS */}
 
       <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -1049,13 +1092,13 @@ export default function KnowledgeBasePage() {
         />
 
         <SummaryCard
-          label="Indexed"
-          value={String(indexedCount)}
+          label="Ready"
+          value={String(readyCount)}
           icon="check"
         />
 
         <SummaryCard
-          label="Processing issues"
+          label="failed"
           value={String(failedCount)}
           icon="alert"
         />
@@ -1086,11 +1129,10 @@ export default function KnowledgeBasePage() {
                   setSearch("");
                   setFilter("All");
                 }}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm transition-colors ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm transition-colors ${activeTab === tab.id
                     ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)] font-semibold text-[var(--usus-primary)]"
                     : "border-transparent text-[var(--usus-text-muted)] hover:bg-[var(--usus-surface-soft)] hover:text-[var(--usus-text)]"
-                }`}
+                  }`}
               >
                 <Icon name={tab.icon} size={16} />
                 {tab.label}
@@ -1149,7 +1191,7 @@ export default function KnowledgeBasePage() {
             </div>
 
             <p className="mt-3 text-sm text-[var(--usus-text-muted)]">
-              Are you sure you want to remove this document from the current browser session? This action cannot be undone.
+              Are you sure you want to permanently delete this document from the knowledge base? This action cannot be undone.
             </p>
 
             <div className="mt-6 flex justify-end gap-3">
@@ -1227,16 +1269,11 @@ function StatusBadge({
   status: DocumentStatus;
 }) {
   const styles: Record<DocumentStatus, string> = {
-    Uploaded:
-      "bg-[var(--usus-surface-soft)] text-[var(--usus-text-muted)]",
-
-    Processing:
+    processing:
       "bg-[var(--usus-primary-soft)] text-[var(--usus-text)]",
-
-    Indexed:
+    ready:
       "bg-[var(--usus-primary-soft)] text-[var(--usus-primary)]",
-
-    Failed:
+    failed:
       "bg-[var(--usus-surface-soft)] text-[var(--usus-danger)]",
   };
 
@@ -1313,16 +1350,14 @@ function SettingRow({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative mt-1 h-6 w-11 shrink-0 transition-colors ${
-          checked
+        className={`relative mt-1 h-6 w-11 shrink-0 transition-colors ${checked
             ? "bg-[var(--usus-primary)]"
             : "bg-[var(--usus-border)]"
-        }`}
+          }`}
       >
         <span
-          className={`absolute top-1 h-4 w-4 bg-white transition-all ${
-            checked ? "left-6" : "left-1"
-          }`}
+          className={`absolute top-1 h-4 w-4 bg-white transition-all ${checked ? "left-6" : "left-1"
+            }`}
         />
       </button>
 

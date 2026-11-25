@@ -41,7 +41,7 @@ export default function CompanyAdminLayout({
           </main>
         </div>
 
-        {/* FLOATING ORGANISATION SETUP */}
+        {/* FLOATING ORGANISATION SETUP CHECKLIST */}
         <OrganisationSetupChecklist
           subscriptionHref="/company-admin/subscription"
           knowledgeBaseHref="/company-admin/knowledge-base"

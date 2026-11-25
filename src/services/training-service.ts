@@ -9,15 +9,9 @@ import { apiClient } from "@/services/api-client";
 export const CATEGORIES = [
   { value: "de_escalation", label: "De-escalation" },
   { value: "communication", label: "Communication" },
-  {
-    value: "problem_resolution",
-    label: "Problem Resolution",
-  },
+  { value: "problem_resolution", label: "Problem Resolution" },
   { value: "empathy", label: "Empathy" },
-  {
-    value: "policy_compliance",
-    label: "Policy & Compliance",
-  },
+  { value: "policy_compliance", label: "Policy & Compliance" },
 ] as const;
 
 export const DIFFICULTIES = [
@@ -50,8 +44,7 @@ export function optionLabel(
   value: string | null,
 ) {
   return (
-    options.find((option) => option.value === value)
-      ?.label ??
+    options.find((option) => option.value === value)?.label ??
     value ??
     "—"
   );
@@ -66,6 +59,14 @@ export function optionLabel(
 export interface ImportantInformation {
   label: string;
   content: string;
+}
+
+/** Categories returned by GET /scenarios/categories. */
+export interface ScenarioCategory {
+  id: string;
+  name: string;
+  description: string;
+  scenario_count: number;
 }
 
 /** The fields an editor can write. */
@@ -93,6 +94,15 @@ export interface ScenarioInput {
   success_criteria: string | null;
 }
 
+/** A scenario returned by the AI suggestions endpoint. */
+export type ScenarioSuggestion = ScenarioInput;
+
+/** Response from POST /scenarios/suggestions. */
+export interface ScenarioSuggestionsResponse {
+  suggestions: ScenarioSuggestion[];
+  skipped_similar: number;
+}
+
 /** GET /scenarios/manage: the full scenario. */
 export interface ManagedScenario extends ScenarioInput {
   id: string;
@@ -103,13 +113,51 @@ export interface ManagedScenario extends ScenarioInput {
 
 /*
  * ============================================================
- * REQUESTS (company admins and managers)
+ * SCENARIO CATEGORIES
  * ============================================================
  */
 
-/**
- * Every scenario, including archived ones.
+/** Fetch scenario categories from the backend. */
+export async function getScenarioCategories(): Promise<
+  ScenarioCategory[]
+> {
+  return apiClient<ScenarioCategory[]>("/scenarios/categories");
+}
+
+/*
+ * ============================================================
+ * AI SCENARIO SUGGESTIONS
+ * ============================================================
  */
+
+export interface ScenarioSuggestionsInput {
+  count: number;
+  category: string;
+  difficulty: string;
+  metrics: string[];
+  focus: string;
+  similarity_threshold: number;
+}
+
+/** Generate AI scenario suggestions using the Knowledge Base. */
+export async function getScenarioSuggestions(
+  input: ScenarioSuggestionsInput,
+): Promise<ScenarioSuggestionsResponse> {
+  return apiClient<ScenarioSuggestionsResponse>(
+    "/scenarios/suggestions",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+/*
+ * ============================================================
+ * VOICE OPTIONS
+ * ============================================================
+ */
+
 /** A voice a scenario can use (GET /scenarios/voices). */
 export interface VoiceOption {
   id: string;
@@ -142,21 +190,33 @@ export async function getVoicePreview(input: {
   );
 }
 
+/*
+ * ============================================================
+ * MANAGED SCENARIOS
+ * ============================================================
+ */
+
+/** Get every scenario, including archived ones. */
 export async function getManagedScenarios(): Promise<
   ManagedScenario[]
 > {
-  return apiClient<ManagedScenario[]>(
-    "/scenarios/manage",
-  );
+  return apiClient<ManagedScenario[]>("/scenarios/manage");
 }
 
+/** Get one scenario by ID. */
 export async function getManagedScenario(
   scenarioId: string,
 ): Promise<ManagedScenario> {
   return apiClient<ManagedScenario>(
-    `/scenarios/${scenarioId}/manage`,
+    `/scenarios/${encodeURIComponent(scenarioId)}/manage`,
   );
 }
+
+/*
+ * ============================================================
+ * CREATE SCENARIO
+ * ============================================================
+ */
 
 /**
  * Create a scenario (409 if the name is
@@ -165,18 +225,21 @@ export async function getManagedScenario(
 export async function createScenario(
   input: ScenarioInput,
 ): Promise<ManagedScenario> {
-  return apiClient<ManagedScenario>(
-    "/scenarios/",
-    {
-      method: "POST",
-      body: JSON.stringify(input),
-    },
-  );
+  return apiClient<ManagedScenario>("/scenarios/", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
+/*
+ * ============================================================
+ * UPDATE SCENARIO
+ * ============================================================
+ */
+
 /**
- * Edit a scenario. Sessions already started
- * keep the version they began with.
+ * Edit a scenario.
+ * Sessions already started keep the version they began with.
  */
 export async function updateScenario(
   scenarioId: string,
@@ -185,7 +248,7 @@ export async function updateScenario(
   },
 ): Promise<ManagedScenario> {
   return apiClient<ManagedScenario>(
-    `/scenarios/${scenarioId}`,
+    `/scenarios/${encodeURIComponent(scenarioId)}`,
     {
       method: "PATCH",
       body: JSON.stringify(input),
@@ -193,18 +256,28 @@ export async function updateScenario(
   );
 }
 
+/*
+ * ============================================================
+ * ARCHIVE SCENARIO
+ * ============================================================
+ */
+
 /**
- * Archive a scenario: trainees stop seeing
- * it; its history is kept.
+ * Archive a scenario: trainees stop seeing it;
+ * its history is kept.
  */
 export async function archiveScenario(
   scenarioId: string,
 ): Promise<void> {
-  await apiClient(`/scenarios/${scenarioId}`, {
-    method: "DELETE",
-  });
+  await apiClient<void>(
+    `/scenarios/${encodeURIComponent(scenarioId)}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
+/** Restore an archived scenario. */
 export async function restoreScenario(
   scenarioId: string,
 ): Promise<ManagedScenario> {
