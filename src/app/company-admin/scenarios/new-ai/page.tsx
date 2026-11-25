@@ -2,106 +2,27 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStaffArea } from "@/hooks/use-staff-area";
 
 import {
-  CATEGORIES,
   DIFFICULTIES,
   PERSONAS,
   SKILLS,
   createScenario,
+  getScenarioCategories,
+  getScenarioSuggestions,
+  type ScenarioCategory,
   type ScenarioInput,
 } from "@/services/training-service";
 
 type ReviewStatus = "draft" | "accepted" | "rejected";
-
-type ReviewFinding = {
-  type: "positive" | "warning" | "suggestion";
-  title: string;
-  description: string;
-};
 
 const inputClass =
   "w-full border border-[var(--usus-border)] bg-[var(--usus-surface)] px-3 py-2.5 text-sm text-[var(--usus-text)] outline-none transition-colors placeholder:text-[var(--usus-text-soft)] focus:border-[var(--usus-primary)]";
 
 const labelClass =
   "mb-2 block text-sm font-medium text-[var(--usus-text)]";
-
-const demoScenario: ScenarioInput = {
-  name: "Handling a Frustrated Customer",
-  description:
-    "A customer contacts the support team after experiencing an unexpected delay with an important order. The customer is frustrated and expects an immediate explanation and resolution.",
-
-  category: "de_escalation",
-  difficulty: "intermediate",
-  persona: "frustrated",
-  skills: ["empathy", "clarity", "resolution", "de_escalation"],
-  estimated_minutes: 15,
-
-  customer_name: "Chidi",
-  customer_personality: "Direct and impatient",
-  customer_emotion: "Frustrated",
-  voice_id: null,
-
-  customer_background:
-    "Chidi placed an order several days ago and was expecting delivery yesterday. This is his first experience with the company's support team.",
-
-  situation:
-    "The customer contacts the support team because an order has not arrived on the promised date. The tracking information has not been updated.",
-
-  customer_goal:
-    "The customer wants an explanation for the delay and a clear delivery date.",
-
-  trainee_objective:
-    "Demonstrate empathy, establish the reason for the delay, communicate clearly and agree on an appropriate resolution.",
-
-  important_information: [
-    {
-      label: "Delivery policy",
-      content:
-        "Delivery delays should be investigated before a new delivery date is communicated.",
-    },
-    {
-      label: "Customer support policy",
-      content:
-        "Customers must receive clear updates and realistic expectations.",
-    },
-  ],
-
-  escalation_behavior:
-    "The customer becomes increasingly frustrated if the trainee dismisses the concern, interrupts or provides vague answers.",
-
-  success_criteria:
-    "The trainee listens actively, acknowledges the inconvenience, investigates the delay, provides accurate information and agrees on a clear next step.",
-};
-
-const demoFindings: ReviewFinding[] = [
-  {
-    type: "positive",
-    title: "Clear training objective",
-    description:
-      "The scenario has a clear objective focused on empathy, communication and resolving customer complaints.",
-  },
-  {
-    type: "positive",
-    title: "Relevant workplace situation",
-    description:
-      "The delayed delivery situation represents a realistic customer service challenge.",
-  },
-  {
-    type: "warning",
-    title: "Resolution details could be stronger",
-    description:
-      "Consider adding a specific escalation route for situations where the delivery cannot be located.",
-  },
-  {
-    type: "suggestion",
-    title: "Add a measurable success indicator",
-    description:
-      "Define how the trainee should confirm that the customer understands and accepts the proposed resolution.",
-  },
-];
 
 export default function NewAIScenarioPage() {
   const area = useStaffArea();
@@ -110,14 +31,14 @@ export default function NewAIScenarioPage() {
   const [topic, setTopic] = useState("Customer Service");
   const [audience, setAudience] = useState("Customer Support Team");
   const [difficulty, setDifficulty] = useState("intermediate");
+  const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<ScenarioCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [duration, setDuration] = useState("15");
   const [instructions, setInstructions] = useState("");
 
   const [scenario, setScenario] =
     useState<ScenarioInput | null>(null);
-
-  const [findings, setFindings] =
-    useState<ReviewFinding[]>([]);
 
   const [status, setStatus] =
     useState<ReviewStatus>("draft");
@@ -130,35 +51,109 @@ export default function NewAIScenarioPage() {
   const [error, setError] = useState("");
   const [reviewNote, setReviewNote] = useState("");
 
-  function generateDemoScenario() {
+  useEffect(() => {
+  let active = true;
+
+  async function loadCategories() {
+    try {
+      const result = await getScenarioCategories();
+
+      if (!active) return;
+
+      setCategories(result);
+
+      if (result.length > 0) {
+        setCategory((current) =>
+          result.some((item) => item.id === current)
+            ? current
+            : result[0].id,
+        );
+      } else {
+        setError("No scenario categories are currently available.");
+      }
+    } catch (err) {
+      if (!active) return;
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load scenario categories.",
+      );
+    } finally {
+      if (active) {
+        setCategoriesLoading(false);
+      }
+    }
+  }
+
+  void loadCategories();
+
+  return () => {
+    active = false;
+  };
+}, []);
+
+  async function generateScenario() {
+    if (!category) {
+      setError("Select a scenario category before generating.");
+      return;
+    }
+
     setGenerating(true);
     setError("");
     setNotice("");
     setStatus("draft");
 
-    // Temporary demonstration.
-    // Replace with the AI generation endpoint when supplied.
-
-    window.setTimeout(() => {
-      const generated: ScenarioInput = {
-        ...demoScenario,
-        category: "de_escalation",
+    try {
+      const response = await getScenarioSuggestions({
+        count: 1,
+        category,
         difficulty,
-        estimated_minutes: Number(duration),
-        name: `AI Scenario: ${topic}`,
-        description:
-          `A practical ${topic.toLowerCase()} training scenario designed for ${audience}. ${instructions}`.trim(),
+        metrics: [],
+        focus: [
+          `Training topic: ${topic.trim()}`,
+          `Target audience: ${audience.trim()}`,
+          `Preferred duration: ${duration} minutes`,
+          instructions.trim(),
+        ]
+          .filter(Boolean)
+          .join(". "),
+        similarity_threshold: 0.5,
+      });
+
+      if (response.suggestions.length === 0) {
+        setNotice(
+          response.skipped_similar > 0
+            ? "The backend skipped the suggestion because it was too similar to existing scenarios. Change your requirements and try again."
+            : "The backend did not return a scenario. Please try again.",
+        );
+        return;
+      }
+
+      const suggestion = response.suggestions[0];
+
+      const generated: ScenarioInput = {
+        ...suggestion,
+        voice_id: null,
       };
 
       setScenario(generated);
-      setFindings(demoFindings);
       setEditing(false);
-      setGenerating(false);
 
       setNotice(
-        "Demonstration scenario generated. Review the content before accepting it.",
+        response.skipped_similar > 0
+          ? `Scenario generated successfully. ${response.skipped_similar} similar suggestion(s) were skipped. Review the draft before saving.`
+          : "Scenario generated successfully. Review the draft before saving.",
       );
-    }, 1200);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to generate a scenario. Please try again.",
+      );
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function updateScenario<K extends keyof ScenarioInput>(
@@ -252,7 +247,6 @@ export default function NewAIScenarioPage() {
 
   return (
     <div className="min-w-0 space-y-6">
-
       {/* HEADER */}
 
       <div>
@@ -288,7 +282,6 @@ export default function NewAIScenarioPage() {
       {/* GENERATION FORM */}
 
       <section className="border border-[var(--usus-border)] bg-[var(--usus-surface)]">
-
         <div className="border-b border-[var(--usus-border)] px-5 py-5">
           <h2 className="font-semibold text-[var(--usus-text)]">
             Scenario requirements
@@ -300,7 +293,6 @@ export default function NewAIScenarioPage() {
         </div>
 
         <div className="grid gap-5 p-5 md:grid-cols-2">
-
           <div>
             <label className={labelClass}>
               Training topic
@@ -325,6 +317,31 @@ export default function NewAIScenarioPage() {
               placeholder="e.g. Customer support team"
               className={inputClass}
             />
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              Scenario category
+            </label>
+
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              disabled={categoriesLoading || categories.length === 0}
+              className={inputClass}
+            >
+              {categoriesLoading ? (
+                <option value="">Loading categories...</option>
+              ) : categories.length === 0 ? (
+                <option value="">No categories available</option>
+              ) : (
+                categories.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
 
           <div>
@@ -378,7 +395,6 @@ export default function NewAIScenarioPage() {
               className={inputClass}
             />
           </div>
-
         </div>
 
         <div className="flex flex-col justify-between gap-4 border-t border-[var(--usus-border)] px-5 py-4 sm:flex-row sm:items-center">
@@ -388,8 +404,14 @@ export default function NewAIScenarioPage() {
 
           <button
             type="button"
-            disabled={generating || !topic.trim() || !audience.trim()}
-            onClick={generateDemoScenario}
+            disabled={
+              generating ||
+              categoriesLoading ||
+              !category ||
+              !topic.trim() ||
+              !audience.trim()
+            }
+            onClick={generateScenario}
             className="bg-[var(--usus-primary)] px-5 py-3 text-sm font-medium text-[#111111] transition-colors hover:bg-[var(--usus-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {generating
@@ -425,11 +447,9 @@ export default function NewAIScenarioPage() {
 
       {scenario && (
         <section className="border border-[var(--usus-border)] bg-[var(--usus-surface)]">
-
           {/* REVIEW HEADER */}
 
           <div className="flex flex-col justify-between gap-4 border-b border-[var(--usus-border)] p-5 sm:flex-row sm:items-center">
-
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-lg font-semibold text-[var(--usus-text)]">
@@ -445,7 +465,6 @@ export default function NewAIScenarioPage() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-
               <button
                 type="button"
                 onClick={() => setEditing((value) => !value)}
@@ -456,22 +475,19 @@ export default function NewAIScenarioPage() {
 
               <button
                 type="button"
-                onClick={generateDemoScenario}
+                onClick={generateScenario}
                 disabled={generating}
                 className="border border-[var(--usus-border)] px-4 py-2 text-xs font-medium text-[var(--usus-text)] hover:bg-[var(--usus-surface-soft)] disabled:opacity-50"
               >
                 Regenerate
               </button>
-
             </div>
           </div>
 
           <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_310px]">
-
             {/* LEFT: SCENARIO DETAILS */}
 
             <div className="min-w-0 space-y-7 p-5">
-
               <div>
                 <FieldLabel>Scenario title</FieldLabel>
 
@@ -548,14 +564,12 @@ export default function NewAIScenarioPage() {
                   }
                 />
               </div>
-
-              {/* CUSTOMER PROFILE */}
+                            {/* CUSTOMER PROFILE */}
 
               <div className="border-t border-[var(--usus-border)] pt-6">
                 <FieldLabel>AI customer profile</FieldLabel>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
-
                   <ProfileField
                     label="Customer name"
                     value={scenario.customer_name ?? ""}
@@ -608,7 +622,6 @@ export default function NewAIScenarioPage() {
                       </p>
                     )}
                   </div>
-
                 </div>
               </div>
 
@@ -672,6 +685,7 @@ export default function NewAIScenarioPage() {
                           <p className="text-sm font-medium text-[var(--usus-text)]">
                             {item.label}
                           </p>
+
                           <p className="mt-2 text-sm leading-6 text-[var(--usus-text-muted)]">
                             {item.content}
                           </p>
@@ -748,13 +762,11 @@ export default function NewAIScenarioPage() {
                   }
                 />
               </div>
-
             </div>
 
             {/* RIGHT: AI REVIEW */}
 
             <aside className="min-w-0 space-y-6 border-t border-[var(--usus-border)] bg-[var(--usus-surface-soft)] p-5 lg:border-l lg:border-t-0">
-
               <div>
                 <h3 className="text-sm font-semibold text-[var(--usus-text)]">
                   Scenario information
@@ -764,9 +776,9 @@ export default function NewAIScenarioPage() {
                   <InfoRow
                     label="Category"
                     value={
-                      CATEGORIES.find(
-                        (item) => item.value === scenario.category,
-                      )?.label ?? scenario.category
+                      categories.find(
+                        (item) => item.id === scenario.category,
+                      )?.name ?? scenario.category
                     }
                   />
 
@@ -797,19 +809,15 @@ export default function NewAIScenarioPage() {
                 </h3>
 
                 <p className="mt-2 text-xs leading-5 text-[var(--usus-text-muted)]">
-                  Review the quality and suitability of the generated
-                  scenario.
+                  The scenario content in this workspace was returned by the
+                  backend. Review its accuracy, suitability and alignment
+                  with your organisation&apos;s training requirements before
+                  saving it.
                 </p>
 
-                <div className="mt-4 space-y-4">
-                  {findings.map((finding, index) => (
-                    <FindingCard key={index} finding={finding} />
-                  ))}
-                </div>
-
                 <p className="mt-4 border-t border-[var(--usus-border)] pt-3 text-[11px] leading-5 text-[var(--usus-text-soft)]">
-                  These are demonstration findings, not results from a
-                  connected AI review service.
+                  Automated review findings are not returned by the current
+                  scenario suggestions endpoint.
                 </p>
               </div>
 
@@ -839,7 +847,6 @@ export default function NewAIScenarioPage() {
                 />
 
                 <div className="mt-4 space-y-2">
-
                   <button
                     type="button"
                     onClick={acceptScenario}
@@ -871,7 +878,6 @@ export default function NewAIScenarioPage() {
                   >
                     Reject draft
                   </button>
-
                 </div>
 
                 <p className="mt-3 text-[11px] leading-5 text-[var(--usus-text-soft)]">
@@ -880,7 +886,6 @@ export default function NewAIScenarioPage() {
                   workflow are not yet persisted.
                 </p>
               </div>
-
             </aside>
           </div>
         </section>
@@ -908,15 +913,13 @@ export default function NewAIScenarioPage() {
           </p>
 
           <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
-            Generating the demonstration preview.
+            Waiting for the backend to generate your scenario.
           </p>
         </div>
       )}
-
     </div>
   );
 }
-
 /* ============================================================
    COMPONENTS
 ============================================================ */
@@ -1008,57 +1011,6 @@ function InfoRow({
       <p className="mt-1 text-sm font-medium text-[var(--usus-text)]">
         {value}
       </p>
-    </div>
-  );
-}
-
-function FindingCard({ finding }: { finding: ReviewFinding }) {
-  const styles = {
-    positive: {
-      symbol: "✓",
-      text: "text-[var(--usus-primary)]",
-      background: "bg-[var(--usus-primary-soft)]",
-      label: "Strength",
-    },
-    warning: {
-      symbol: "!",
-      text: "text-[var(--usus-warning)]",
-      background: "bg-[var(--usus-surface)]",
-      label: "Attention",
-    },
-    suggestion: {
-      symbol: "↗",
-      text: "text-[var(--usus-text-muted)]",
-      background: "bg-[var(--usus-surface)]",
-      label: "Suggestion",
-    },
-  };
-
-  const style = styles[finding.type];
-
-  return (
-    <div className="border border-[var(--usus-border)] bg-[var(--usus-surface)] p-3">
-      <div className="flex items-start gap-3">
-        <span
-          className={`flex h-6 w-6 shrink-0 items-center justify-center text-xs font-semibold ${style.background} ${style.text}`}
-        >
-          {style.symbol}
-        </span>
-
-        <div className="min-w-0">
-          <p className={`text-[10px] font-semibold uppercase tracking-wide ${style.text}`}>
-            {style.label}
-          </p>
-
-          <p className="mt-1 text-xs font-semibold text-[var(--usus-text)]">
-            {finding.title}
-          </p>
-
-          <p className="mt-1 text-xs leading-5 text-[var(--usus-text-muted)]">
-            {finding.description}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

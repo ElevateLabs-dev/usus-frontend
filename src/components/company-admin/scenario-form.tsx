@@ -95,8 +95,8 @@ export function ScenarioForm({
       "skills",
       values.skills.includes(skill)
         ? values.skills.filter(
-            (item) => item !== skill,
-          )
+          (item) => item !== skill,
+        )
         : [...values.skills, skill],
     );
   }

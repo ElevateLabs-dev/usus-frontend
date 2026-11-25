@@ -1,146 +1,189 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AlertCircle,
   Check,
   ChevronRight,
-  X,
   Loader2,
-  AlertCircle,
+  X,
 } from "lucide-react";
 
-export type SetupTaskId =
-  | "subscription"
-  | "knowledge"
-  | "settings"
-  | "team";
+import {
+  getOnboardingChecklist,
+  updateOnboardingChecklist,
+  type OnboardingChecklist,
+} from "@/services/onboarding-service";
 
 interface OrganisationSetupChecklistProps {
   subscriptionHref: string;
   knowledgeBaseHref: string;
   settingsHref: string;
   teamHref: string;
-
-  // Progress received from the backend.
-  completedItems?: SetupTaskId[];
-
-  // Backend update handler.
-  onToggleComplete?: (
-    taskId: SetupTaskId,
-    completed: boolean
-  ) => Promise<void>;
-
-  isLoading?: boolean;
-  error?: string | null;
-  onRetry?: () => void;
 }
-
-const setupItems: {
-  id: SetupTaskId;
-  title: string;
-  description: string;
-  action: string;
-}[] = [
-  {
-    id: "subscription",
-    title: "Choose a Subscription Plan",
-    description: "Select a plan for your organisation.",
-    action: "Choose plan",
-  },
-  {
-    id: "knowledge",
-    title: "Upload Knowledge Base",
-    description: "Add your company documents and policies.",
-    action: "Upload files",
-  },
-  {
-    id: "settings",
-    title: "Set Up Company Account",
-    description: "Complete your organisation details.",
-    action: "Set up",
-  },
-  {
-    id: "team",
-    title: "Add Your Team",
-    description: "Invite managers and trainees.",
-    action: "Add members",
-  },
-];
 
 export function OrganisationSetupChecklist({
   subscriptionHref,
   knowledgeBaseHref,
   settingsHref,
   teamHref,
-  completedItems = [],
-  onToggleComplete,
-  isLoading = false,
-  error = null,
-  onRetry,
 }: OrganisationSetupChecklistProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [updatingItems, setUpdatingItems] = useState<
-    SetupTaskId[]
-  >([]);
-  const [actionError, setActionError] = useState<string | null>(
-    null
-  );
+  const [checklist, setChecklist] =
+    useState<OnboardingChecklist | null>(null);
 
-  const destinations: Record<SetupTaskId, string> = {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [error, setError] = useState("");
+
+  // Map backend checklist keys to dashboard routes.
+  const destinations: Record<string, string> = {
     subscription: subscriptionHref,
+    knowledge_base: knowledgeBaseHref,
     knowledge: knowledgeBaseHref,
-    settings: settingsHref,
     team: teamHref,
+    managers: teamHref,
+    settings: settingsHref,
+    company_settings: settingsHref,
   };
 
-  // Only count valid, unique completed tasks.
-  const validCompletedItems = Array.from(
-    new Set(
-      completedItems.filter((id) =>
-        setupItems.some((item) => item.id === id)
-      )
-    )
-  );
+  // Fetch checklist from backend.
+  useEffect(() => {
+    let active = true;
 
-  const completedCount = validCompletedItems.length;
+    async function loadChecklist() {
+      try {
+        const result = await getOnboardingChecklist();
 
-  const progress = Math.round(
-    (completedCount / setupItems.length) * 100
-  );
-
-  async function handleToggleComplete(taskId: SetupTaskId) {
-    if (!onToggleComplete || updatingItems.includes(taskId)) {
-      return;
+        if (active) {
+          setChecklist(result);
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load your setup checklist.",
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
     }
 
-    const currentlyCompleted =
-      validCompletedItems.includes(taskId);
+    void loadChecklist();
 
-    setActionError(null);
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    setUpdatingItems((previous) => [...previous, taskId]);
+  // Retry checklist request.
+  async function handleRetry() {
+    setError("");
+    setIsLoading(true);
 
     try {
-      await onToggleComplete(
-        taskId,
-        !currentlyCompleted
-      );
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Unable to update setup progress."
+      const result = await getOnboardingChecklist();
+      setChecklist(result);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load your setup checklist.",
       );
     } finally {
-      setUpdatingItems((previous) =>
-        previous.filter((id) => id !== taskId)
-      );
+      setIsLoading(false);
     }
+  }
+
+  // Hide or show checklist through backend.
+  async function handleDismiss(dismissed: boolean) {
+    setError("");
+    setIsUpdating(true);
+
+    try {
+      const result = await updateOnboardingChecklist(dismissed);
+
+      setChecklist(result);
+
+      if (dismissed) {
+        setIsOpen(false);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update your checklist.",
+      );
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  const completed = checklist?.completed ?? 0;
+  const total = checklist?.total ?? 0;
+
+  const progress =
+    total > 0
+      ? Math.round((completed / total) * 100)
+      : 0;
+
+  if (isLoading && !checklist) {
+    return null;
   }
 
   return (
     <>
+      {/* FLOATING REMINDER */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsOpen(true);
+
+            if (checklist?.dismissed) {
+              void handleDismiss(false);
+            }
+          }}
+          aria-label="Open organisation setup checklist"
+          className="
+            fixed bottom-6 left-5 z-[90]
+            flex h-16 w-16 items-center justify-center
+            rounded-full border border-[var(--usus-border)]
+            bg-[var(--usus-surface)]
+            text-[var(--usus-text)]
+            shadow-xl transition-colors
+            hover:border-[var(--usus-primary)]
+            md:left-[17rem]
+          "
+        >
+          <span className="
+            relative flex h-11 w-11 items-center justify-center
+            rounded-full bg-[var(--usus-primary-soft)]
+          ">
+            <span className="
+              text-sm font-bold
+              text-[var(--usus-primary)]
+            ">
+              {isLoading ? "..." : `${progress}%`}
+            </span>
+
+            {progress < 100 && (
+              <span className="
+                absolute -right-1 -top-1 h-3 w-3
+                rounded-full border-2
+                border-[var(--usus-surface)]
+                bg-[var(--usus-primary)]
+              " />
+            )}
+          </span>
+        </button>
+      )}
+
       {/* BACKDROP */}
       {isOpen && (
         <button
@@ -149,88 +192,51 @@ export function OrganisationSetupChecklist({
           onClick={() => setIsOpen(false)}
           className="
             fixed inset-0 z-[80]
-            cursor-default
-            bg-black/30
+            cursor-default bg-black/30
             backdrop-blur-[2px]
           "
         />
       )}
 
-      {/* FLOATING CIRCULAR REMINDER */}
-      {!isOpen && (
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          aria-label="Open organisation setup checklist"
-          className="
-            fixed right-6 top-[110px] z-[90]
-            flex h-16 w-16
-            items-center justify-center
-            rounded-full
-            border border-[var(--usus-border)]
-            bg-[var(--usus-surface)]
-            text-[var(--usus-text)]
-            shadow-xl
-            transition-transform duration-200
-            hover:scale-105
-            usus-reminder-breathe
-            md:right-8
-          "
-        >
-          <span
-            className="
-              relative flex h-11 w-11
-              items-center justify-center
-              rounded-full
-              bg-[var(--usus-primary-soft)]
-            "
-          >
-            <span className="text-sm font-bold text-[var(--usus-primary)]">
-              {isLoading ? "..." : `${progress}%`}
-            </span>
-
-            {!isLoading && progress < 100 && (
-              <span
-                className="
-                  absolute -right-1 -top-1
-                  h-3 w-3 rounded-full
-                  border-2 border-[var(--usus-surface)]
-                  bg-[var(--usus-primary)]
-                "
-              />
-            )}
-          </span>
-        </button>
-      )}
-
-      {/* SLIDE-OUT PANEL */}
+      {/* CHECKLIST PANEL */}
       <aside
-  aria-label="Organisation setup checklist"
-  aria-hidden={!isOpen}
-  className={`
-    fixed inset-y-0 right-0 z-[100]
-    flex w-[min(100vw,380px)] flex-col
-    border-l border-[var(--usus-border)]
-    bg-[var(--usus-surface)]
-    shadow-2xl
-    transition-transform duration-300 ease-in-out
-    ${isOpen ? "translate-x-0" : "translate-x-[calc(100%+2px)]"}
-    ${!isOpen ? "pointer-events-none" : ""}
-  `}
->
+        aria-label="Organisation setup checklist"
+        aria-hidden={!isOpen}
+        className={`
+          fixed bottom-0 left-0 top-0 z-[100]
+          flex w-[min(100%,380px)] flex-col
+          border-r border-[var(--usus-border)]
+          bg-[var(--usus-surface)]
+          shadow-2xl
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
         {/* HEADER */}
-        <div className="flex items-start justify-between border-b border-[var(--usus-border)] p-6">
+        <div className="
+          flex items-start justify-between
+          border-b border-[var(--usus-border)] p-6
+        ">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--usus-primary)]">
+            <p className="
+              text-xs font-semibold uppercase tracking-wider
+              text-[var(--usus-primary)]
+            ">
               Organisation setup
             </p>
 
-            <h2 className="mt-2 text-xl font-bold text-[var(--usus-text)]">
+            <h2 className="
+              mt-2 text-xl font-bold
+              text-[var(--usus-text)]
+            ">
               Getting started
             </h2>
 
-            <p className="mt-1 text-sm text-[var(--usus-text-muted)]">
-              Complete these steps to get your organisation ready.
+            <p className="
+              mt-1 text-sm
+              text-[var(--usus-text-muted)]
+            ">
+              Your company setup checklist.
             </p>
           </div>
 
@@ -243,7 +249,6 @@ export function OrganisationSetupChecklist({
               items-center justify-center
               text-[var(--usus-text-muted)]
               transition-colors
-              hover:bg-[var(--usus-surface-soft)]
               hover:text-[var(--usus-text)]
             "
           >
@@ -252,19 +257,30 @@ export function OrganisationSetupChecklist({
         </div>
 
         {/* PROGRESS */}
-        <div className="border-b border-[var(--usus-border-soft)] p-6">
+        <div className="
+          border-b border-[var(--usus-border-soft)] p-6
+        ">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--usus-text)]">
+            <span className="
+              text-sm font-semibold
+              text-[var(--usus-text)]
+            ">
               Setup progress
             </span>
 
-            <span className="text-sm font-bold text-[var(--usus-primary)]">
-              {isLoading ? "Loading..." : `${progress}%`}
+            <span className="
+              text-sm font-bold
+              text-[var(--usus-primary)]
+            ">
+              {progress}%
             </span>
           </div>
 
           <div
-            className="h-2 w-full overflow-hidden rounded-full bg-[var(--usus-muted)]"
+            className="
+              h-2 w-full overflow-hidden
+              rounded-full bg-[var(--usus-muted)]
+            "
             role="progressbar"
             aria-label="Organisation setup progress"
             aria-valuenow={progress}
@@ -272,29 +288,41 @@ export function OrganisationSetupChecklist({
             aria-valuemax={100}
           >
             <div
-              className="h-full rounded-full bg-[var(--usus-primary)] transition-all duration-500"
+              className="
+                h-full rounded-full
+                bg-[var(--usus-primary)]
+                transition-all duration-500
+              "
               style={{ width: `${progress}%` }}
             />
           </div>
 
-          <p className="mt-3 text-xs text-[var(--usus-text-muted)]">
-            {isLoading
-              ? "Retrieving organisation progress..."
-              : `${completedCount} of ${setupItems.length} steps completed`}
+          <p className="
+            mt-3 text-xs
+            text-[var(--usus-text-muted)]
+          ">
+            {completed} of {total} steps completed
           </p>
         </div>
 
-        {/* CHECKLIST */}
+        {/* CHECKLIST STEPS */}
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
           {isLoading && (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-[var(--usus-text-muted)]">
+            <div className="
+              flex items-center justify-center
+              gap-2 py-8 text-sm
+              text-[var(--usus-text-muted)]
+            ">
               <Loader2 size={17} className="animate-spin" />
               Loading setup progress...
             </div>
           )}
 
           {!isLoading && error && (
-            <div className="border border-[var(--usus-danger)]/30 p-4">
+            <div className="
+              border border-[var(--usus-danger)]/30
+              bg-[var(--usus-surface-soft)] p-4
+            ">
               <div className="flex items-start gap-2">
                 <AlertCircle
                   size={17}
@@ -302,23 +330,31 @@ export function OrganisationSetupChecklist({
                 />
 
                 <div>
-                  <p className="text-sm font-semibold text-[var(--usus-text)]">
-                    Unable to load progress
+                  <p className="
+                    text-sm font-semibold
+                    text-[var(--usus-text)]
+                  ">
+                    Unable to load checklist
                   </p>
 
-                  <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
+                  <p className="
+                    mt-1 text-xs
+                    text-[var(--usus-text-muted)]
+                  ">
                     {error}
                   </p>
 
-                  {onRetry && (
-                    <button
-                      type="button"
-                      onClick={onRetry}
-                      className="mt-3 text-xs font-semibold text-[var(--usus-primary)] hover:underline"
-                    >
-                      Try again
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleRetry()}
+                    className="
+                      mt-3 text-xs font-semibold
+                      text-[var(--usus-primary)]
+                      hover:underline
+                    "
+                  >
+                    Try again
+                  </button>
                 </div>
               </div>
             </div>
@@ -326,95 +362,81 @@ export function OrganisationSetupChecklist({
 
           {!isLoading &&
             !error &&
-            setupItems.map((item) => {
-              const isCompleted =
-                validCompletedItems.includes(item.id);
-
-              const isUpdating =
-                updatingItems.includes(item.id);
+            checklist?.steps.map((step) => {
+              const destination = destinations[step.key];
 
               return (
                 <div
-                  key={item.id}
+                  key={step.key}
                   className={`
                     border p-4 transition-colors
                     ${
-                      isCompleted
+                      step.done
                         ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
                         : "border-[var(--usus-border-soft)] bg-[var(--usus-surface-soft)]"
                     }
                   `}
                 >
                   <div className="flex items-start gap-3">
-                    {/* COMPLETION CONTROL */}
-                    <button
-                      type="button"
-                      disabled={!onToggleComplete || isUpdating}
-                      onClick={() => handleToggleComplete(item.id)}
-                      aria-label={
-                        isCompleted
-                          ? `Mark ${item.title} as incomplete`
-                          : `Mark ${item.title} as complete`
-                      }
-                      aria-pressed={isCompleted}
+                    {/* COMPLETION STATUS */}
+                    <span
                       className={`
                         mt-0.5 flex h-5 w-5 shrink-0
-                        items-center justify-center
-                        border transition-colors
+                        items-center justify-center border
                         ${
-                          isCompleted
+                          step.done
                             ? "border-[var(--usus-primary)] bg-[var(--usus-primary)] text-black"
                             : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
                         }
-                        ${!onToggleComplete ? "cursor-not-allowed opacity-60" : ""}
                       `}
                     >
-                      {isUpdating ? (
-                        <Loader2
-                          size={12}
-                          className="animate-spin"
-                        />
-                      ) : isCompleted ? (
+                      {step.done && (
                         <Check size={13} strokeWidth={3} />
-                      ) : null}
-                    </button>
+                      )}
+                    </span>
 
-                    {/* TASK DETAILS */}
+                    {/* STEP INFORMATION */}
                     <div className="min-w-0 flex-1">
-                      <p
-                        className={`
-                          text-sm font-semibold
-                          ${
-                            isCompleted
-                              ? "text-[var(--usus-text-muted)] line-through"
-                              : "text-[var(--usus-text)]"
-                          }
-                        `}
-                      >
-                        {item.title}
+                      <p className={`
+                        text-sm font-semibold
+                        ${
+                          step.done
+                            ? "text-[var(--usus-text-muted)]"
+                            : "text-[var(--usus-text)]"
+                        }
+                      `}>
+                        {step.title}
                       </p>
 
-                      <p className="mt-1 text-xs leading-5 text-[var(--usus-text-muted)]">
-                        {item.description}
+                      <p className="
+                        mt-1 text-xs leading-5
+                        text-[var(--usus-text-muted)]
+                      ">
+                        {step.description}
                       </p>
 
-                      <Link
-                        href={destinations[item.id]}
-                        onClick={() => setIsOpen(false)}
-                        className="
-                          mt-3 inline-flex items-center gap-1
-                          text-xs font-semibold
-                          text-[var(--usus-primary)]
-                          hover:underline
-                        "
-                      >
-                        {isCompleted ? "View details" : item.action}
-                        <ChevronRight size={14} />
-                      </Link>
+                      {destination && (
+                        <Link
+                          href={destination}
+                          onClick={() => setIsOpen(false)}
+                          className="
+                            mt-3 inline-flex items-center gap-1
+                            text-xs font-semibold
+                            text-[var(--usus-primary)]
+                            hover:underline
+                          "
+                        >
+                          View details
+                          <ChevronRight size={14} />
+                        </Link>
+                      )}
                     </div>
 
-                    {isCompleted && (
-                      <span className="shrink-0 text-[10px] font-semibold text-[var(--usus-primary)]">
+                    {step.done && (
+                      <span className="
+                        shrink-0 text-[10px] font-semibold
+                        text-[var(--usus-primary)]
+                      ">
                         DONE
                       </span>
                     )}
@@ -422,33 +444,53 @@ export function OrganisationSetupChecklist({
                 </div>
               );
             })}
-
-          {actionError && (
-            <p
-              role="alert"
-              className="border border-[var(--usus-danger)]/30 p-3 text-xs text-[var(--usus-danger)]"
-            >
-              {actionError}
-            </p>
-          )}
         </div>
 
         {/* FOOTER */}
-        <div className="border-t border-[var(--usus-border)] p-5">
+        <div className="
+          border-t border-[var(--usus-border)] p-5
+        ">
           {progress === 100 && !isLoading && !error ? (
             <div className="text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[var(--usus-primary-soft)] text-[var(--usus-primary)]">
+              <div className="
+                mx-auto flex h-10 w-10
+                items-center justify-center
+                rounded-full bg-[var(--usus-primary-soft)]
+                text-[var(--usus-primary)]
+              ">
                 <Check size={20} />
               </div>
 
-              <p className="mt-3 text-sm font-semibold text-[var(--usus-text)]">
+              <p className="
+                mt-3 text-sm font-semibold
+                text-[var(--usus-text)]
+              ">
                 Organisation setup complete!
               </p>
             </div>
           ) : (
-            <p className="text-xs leading-5 text-[var(--usus-text-muted)]">
-              Complete each step to finish setting up your organisation.
-            </p>
+            <div>
+              <p className="
+                text-xs leading-5
+                text-[var(--usus-text-muted)]
+              ">
+                These steps are optional and do not restrict access to your organisation.
+              </p>
+
+              <button
+                type="button"
+                disabled={isUpdating}
+                onClick={() => void handleDismiss(true)}
+                className="
+                  mt-4 text-xs font-semibold
+                  text-[var(--usus-text-muted)]
+                  transition-colors hover:text-[var(--usus-primary)]
+                  disabled:opacity-50
+                "
+              >
+                {isUpdating ? "Updating..." : "Hide checklist"}
+              </button>
+            </div>
           )}
         </div>
       </aside>

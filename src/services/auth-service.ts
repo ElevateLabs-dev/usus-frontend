@@ -8,6 +8,108 @@ import { apiClient } from "@/services/api-client";
 
 const API_URL = "/api/backend";
 
+/*
+ * ============================================================
+ * COMPANY SIGNUP TYPES
+ * ============================================================
+ */
+
+export interface CompanySignupRequest {
+  company_name: string;
+  company_type: string;
+  email: string;
+  full_name: string;
+  password: string;
+  referral_source: string;
+}
+
+export interface CompanySignupResponse {
+  email: string;
+  expires_in: number;
+  resend_in: number;
+}
+
+/*
+ * ============================================================
+ * EMAIL VERIFICATION TYPES
+ * ============================================================
+ */
+
+export interface VerifyCompanyEmailRequest {
+  email: string;
+  code: string;
+}
+
+/*
+ * ============================================================
+ * COMPANY SIGNUP
+ * ============================================================
+ */
+
+/**
+ * Register a new company.
+ *
+ * The backend:
+ * - Validates the company email.
+ * - Checks whether the email/company name is already registered.
+ * - Stores the pending signup details.
+ * - Sends a 6-digit verification code.
+ *
+ * The organisation is NOT created until email verification
+ * succeeds.
+ */
+export async function signupCompany(
+  data: CompanySignupRequest,
+): Promise<CompanySignupResponse> {
+  return apiClient<CompanySignupResponse>(
+    "/auth/signup",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+/*
+ * ============================================================
+ * EMAIL VERIFICATION
+ * ============================================================
+ */
+
+/**
+ * Verify the company's email address.
+ *
+ * On success, the backend:
+ * - Creates the organisation.
+ * - Creates the registering user as company admin.
+ * - Signs the user in.
+ * - Returns an access token.
+ *
+ * The returned token is stored using the existing
+ * authentication mechanism.
+ */
+export async function verifyCompanyEmail(
+  data: VerifyCompanyEmailRequest,
+): Promise<LoginResponse> {
+  const response = await apiClient<LoginResponse>(
+    "/auth/verify-email",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+
+  storeTokens(response);
+
+  return response;
+}
+
+/*
+ * ============================================================
+ * LOGIN
+ * ============================================================
+ */
+
 /**
  * Login user and store authentication tokens.
  */
@@ -59,32 +161,26 @@ export async function login(
     let message = "Login failed.";
 
     try {
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (
-        typeof data?.detail ===
-        "string"
+        typeof data?.detail === "string"
       ) {
-        message =
-          data.detail;
+        message = data.detail;
       } else if (
-        Array.isArray(
-          data?.detail,
-        )
+        Array.isArray(data?.detail)
       ) {
-        message =
-          data.detail
-            .map(
-              (
-                error: {
-                  msg?: string;
-                },
-              ) =>
-                error.msg ||
-                "Validation error",
-            )
-            .join(", ");
+        message = data.detail
+          .map(
+            (
+              error: {
+                msg?: string;
+              },
+            ) =>
+              error.msg ||
+              "Validation error",
+          )
+          .join(", ");
       }
     } catch {
       // Keep default login error.
@@ -100,6 +196,12 @@ export async function login(
 
   return data;
 }
+
+/*
+ * ============================================================
+ * TOKEN STORAGE
+ * ============================================================
+ */
 
 /**
  * Save the tokens returned by the backend
@@ -128,13 +230,21 @@ function storeTokens(data: LoginResponse) {
   );
 }
 
+/*
+ * ============================================================
+ * PASSWORD CHANGE
+ * ============================================================
+ */
+
 /**
  * Replace the signed-in user's password.
  *
- * Used on first sign-in to swap the emailed
- * temporary password for a real one. The backend
- * returns a new token without the password-change
- * restriction, which replaces the stored one.
+ * Used on first sign-in to swap an emailed
+ * temporary password for a real one.
+ *
+ * The backend returns a new token without the
+ * password-change restriction, which replaces
+ * the stored token.
  */
 export async function changePassword(
   currentPassword: string,
@@ -157,6 +267,11 @@ export async function changePassword(
   return data;
 }
 
+/*
+ * ============================================================
+ * LOGOUT
+ * ============================================================
+ */
 
 /**
  * Remove authentication tokens.
@@ -190,14 +305,18 @@ export function logout() {
   );
 }
 
+/*
+ * ============================================================
+ * GET ACCESS TOKEN
+ * ============================================================
+ */
 
 /**
  * Get the current access token.
  */
 export function getAccessToken() {
   if (
-    typeof window ===
-    "undefined"
+    typeof window === "undefined"
   ) {
     return null;
   }
@@ -207,6 +326,11 @@ export function getAccessToken() {
   );
 }
 
+/*
+ * ============================================================
+ * JWT DECODING
+ * ============================================================
+ */
 
 /**
  * Decode the JWT payload.
@@ -242,15 +366,17 @@ function decodeJwtPayload(
 
     return JSON.parse(
       decoded,
-    ) as Record<
-      string,
-      unknown
-    >;
+    ) as Record<string, unknown>;
   } catch {
     return null;
   }
 }
 
+/*
+ * ============================================================
+ * AUTHENTICATED USER
+ * ============================================================
+ */
 
 /**
  * Get the authenticated user
@@ -274,22 +400,19 @@ export function getAuthenticatedUser():
   }
 
   if (
-    typeof payload.user_id !==
-    "string"
+    typeof payload.user_id !== "string"
   ) {
     return null;
   }
 
   if (
-    typeof payload.email !==
-    "string"
+    typeof payload.email !== "string"
   ) {
     return null;
   }
 
   if (
-    typeof payload.role !==
-    "string"
+    typeof payload.role !== "string"
   ) {
     return null;
   }
@@ -299,4 +422,4 @@ export function getAuthenticatedUser():
     email: payload.email,
     role: payload.role as AuthUser["role"],
   };
-};
+}
