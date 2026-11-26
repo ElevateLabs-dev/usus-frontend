@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import Image from "next/image";
 
 import { changePassword } from "@/services/auth-service";
 
 import {
   getMyOrganisation,
   renameMyOrganisation,
+  uploadMyOrganisationLogo,
+  removeMyOrganisationLogo,
   type MyOrganisation,
 } from "@/services/company-service";
 
@@ -24,14 +28,11 @@ const buttonClassName =
   "w-fit cursor-pointer rounded-lg bg-[var(--usus-primary)] px-4 py-2 text-xs font-medium text-[#111111] transition-colors hover:bg-[var(--usus-primary-hover)] disabled:cursor-not-allowed disabled:opacity-60";
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString(
-    undefined,
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 type Message = {
@@ -43,40 +44,41 @@ export default function CompanySettingsPage() {
   const [organisation, setOrganisation] =
     useState<MyOrganisation | null>(null);
 
-  const [profile, setProfile] =
-    useState<OrgUser | null>(null);
+  const [profile, setProfile] = useState<OrgUser | null>(null);
 
-  const [organisationName, setOrganisationName] =
-    useState("");
+  const [organisationName, setOrganisationName] = useState("");
 
   const [fullName, setFullName] = useState("");
-  const [currentPassword, setCurrentPassword] =
-    useState("");
-  const [newPassword, setNewPassword] =
-    useState("");
 
-  /** Which form is being saved. */
-  const [saving, setSaving] = useState<
-    string | null
-  >(null);
+  const [currentPassword, setCurrentPassword] = useState("");
 
-  const [message, setMessage] =
-    useState<Message>(null);
+  const [newPassword, setNewPassword] = useState("");
+
+  // Organisation logo states
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const [message, setMessage] = useState<Message>(null);
+
+  /*
+   * ============================================================
+   * LOAD SETTINGS
+   * ============================================================
+   */
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([
-      getMyOrganisation(),
-      getMyProfile(),
-    ])
+    Promise.all([getMyOrganisation(), getMyProfile()])
       .then(([nextOrganisation, nextProfile]) => {
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         setOrganisation(nextOrganisation);
         setOrganisationName(nextOrganisation.name);
+
         setProfile(nextProfile);
         setFullName(nextProfile.full_name ?? "");
       })
@@ -97,6 +99,167 @@ export default function CompanySettingsPage() {
     };
   }, []);
 
+  /*
+   * ============================================================
+   * LOGO PREVIEW CLEANUP
+   * ============================================================
+   */
+
+  useEffect(() => {
+    return () => {
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
+  /*
+   * ============================================================
+   * HANDLE LOGO SELECTION
+   * ============================================================
+   */
+
+  function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({
+        kind: "error",
+        text: "Only JPEG, PNG and WebP images are supported.",
+      });
+
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({
+        kind: "error",
+        text: "Logo must not exceed 2MB.",
+      });
+
+      event.target.value = "";
+      return;
+    }
+
+    setMessage(null);
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+
+    // Allows selecting the same file again.
+    event.target.value = "";
+  }
+
+  /*
+   * ============================================================
+   * SAVE ORGANISATION LOGO
+   * ============================================================
+   */
+
+  async function handleSaveLogo() {
+    if (!logoFile) return;
+
+    setSaving("logo");
+    setMessage(null);
+
+    try {
+      const updatedOrganisation =
+        await uploadMyOrganisationLogo(logoFile);
+
+      setOrganisation(updatedOrganisation);
+
+      // Notify the dashboard header.
+      window.dispatchEvent(
+        new Event("usus-organisation-updated"),
+      );
+
+      setLogoFile(null);
+      setLogoPreview(null);
+
+      setMessage({
+        kind: "success",
+        text: "Organisation logo uploaded successfully.",
+      });
+    } catch (err) {
+      setMessage({
+        kind: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Unable to upload organisation logo.",
+      });
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  /*
+   * ============================================================
+   * REMOVE ORGANISATION LOGO
+   * ============================================================
+   */
+
+  async function handleRemoveLogo() {
+    // Cancel a newly selected logo without calling the API.
+    if (logoFile) {
+      setLogoFile(null);
+      setLogoPreview(null);
+      setMessage(null);
+      return;
+    }
+
+    if (!organisation?.logo_url) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to remove your organisation logo?",
+    );
+
+    if (!confirmed) return;
+
+    setSaving("remove-logo");
+    setMessage(null);
+
+    try {
+      const updatedOrganisation =
+        await removeMyOrganisationLogo();
+
+      setOrganisation(updatedOrganisation);
+
+      // Notify the dashboard header.
+      window.dispatchEvent(
+        new Event("usus-organisation-updated"),
+      );
+
+      setLogoFile(null);
+      setLogoPreview(null);
+
+      setMessage({
+        kind: "success",
+        text: "Organisation logo removed successfully.",
+      });
+    } catch (err) {
+      setMessage({
+        kind: "error",
+        text:
+          err instanceof Error
+            ? err.message
+            : "Unable to remove organisation logo.",
+      });
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  /*
+   * ============================================================
+   * GENERAL SAVE HANDLER
+   * ============================================================
+   */
+
   async function save(
     key: string,
     action: () => Promise<void>,
@@ -107,6 +270,7 @@ export default function CompanySettingsPage() {
 
     try {
       await action();
+
       setMessage({
         kind: "success",
         text: success,
@@ -124,18 +288,21 @@ export default function CompanySettingsPage() {
     }
   }
 
-  function handleRename(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  /*
+   * ============================================================
+   * UPDATE ORGANISATION NAME
+   * ============================================================
+   */
+
+  function handleRename(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     void save(
       "organisation",
       async () => {
-        const updated =
-          await renameMyOrganisation(
-            organisationName.trim(),
-          );
+        const updated = await renameMyOrganisation(
+          organisationName.trim(),
+        );
 
         setOrganisation(updated);
         setOrganisationName(updated.name);
@@ -144,34 +311,37 @@ export default function CompanySettingsPage() {
     );
   }
 
-  function handleName(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  /*
+   * ============================================================
+   * UPDATE ADMIN NAME
+   * ============================================================
+   */
+
+  function handleName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     void save(
       "name",
       async () => {
-        setProfile(
-          await updateMyName(fullName.trim()),
-        );
+        setProfile(await updateMyName(fullName.trim()));
       },
       "Your name was updated.",
     );
   }
 
-  function handlePassword(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  /*
+   * ============================================================
+   * CHANGE PASSWORD
+   * ============================================================
+   */
+
+  function handlePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     void save(
       "password",
       async () => {
-        await changePassword(
-          currentPassword,
-          newPassword,
-        );
+        await changePassword(currentPassword, newPassword);
 
         setCurrentPassword("");
         setNewPassword("");
@@ -190,6 +360,10 @@ export default function CompanySettingsPage() {
     fullName.trim().length > 0 &&
     fullName.trim() !== (profile.full_name ?? "");
 
+  // Show selected preview first, then saved logo.
+  const displayedLogo =
+    logoPreview || organisation?.logo_url || null;
+
   return (
     <div className="min-h-full bg-[var(--usus-background)]">
       <section className="px-6 py-8 md:px-8 md:py-10">
@@ -205,19 +379,14 @@ export default function CompanySettingsPage() {
             </h1>
 
             <p className="mt-2 max-w-2xl text-sm text-[var(--usus-text-muted)]">
-              Your organisation&apos;s details and your
-              own account.
+              Your organisation&apos;s details and your own account.
             </p>
           </div>
 
           {/* Message */}
           {message && (
             <div
-              role={
-                message.kind === "error"
-                  ? "alert"
-                  : "status"
-              }
+              role={message.kind === "error" ? "alert" : "status"}
               className={
                 message.kind === "error"
                   ? "mt-6 rounded-xl border border-[var(--usus-danger)] bg-[var(--usus-surface)] px-4 py-3 text-sm text-[var(--usus-danger)]"
@@ -233,6 +402,7 @@ export default function CompanySettingsPage() {
             title="Organisation"
             description="How your organisation appears on USUS."
           >
+            {/* Organisation Name */}
             <form
               onSubmit={handleRename}
               className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
@@ -249,9 +419,7 @@ export default function CompanySettingsPage() {
                   id="organisation-name"
                   value={organisationName}
                   onChange={(event) =>
-                    setOrganisationName(
-                      event.target.value,
-                    )
+                    setOrganisationName(event.target.value)
                   }
                   disabled={!organisation}
                   className={inputClassName}
@@ -265,13 +433,101 @@ export default function CompanySettingsPage() {
                   }
                   className={buttonClassName}
                 >
-                  {saving === "organisation"
-                    ? "Saving..."
-                    : "Save"}
+                  {saving === "organisation" ? "Saving..." : "Save"}
                 </button>
               </div>
             </form>
 
+            {/* Organisation Logo */}
+            <div className="flex flex-col gap-5 border-t border-[var(--usus-border-soft)] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-[var(--usus-text)]">
+                  Organisation logo
+                </p>
+
+                <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
+                  Upload your company logo. It will appear in your dashboard
+                  header.
+                </p>
+
+                <p className="mt-1 text-xs text-[var(--usus-text-muted)]">
+                  JPEG, PNG or WebP. Maximum size: 2MB.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start gap-3 sm:items-end">
+                {/* Logo Preview */}
+                <div className="relative flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg border border-[var(--usus-border)] bg-[var(--usus-surface-soft)]">
+                  {displayedLogo ? (
+                    <Image
+                      src={displayedLogo}
+                      alt="Organisation logo preview"
+                      fill
+                      sizes="128px"
+                      unoptimized
+                      className="object-contain p-3"
+                    />
+                  ) : (
+                    <span className="text-xs text-[var(--usus-text-muted)]">
+                      Logo preview
+                    </span>
+                  )}
+                </div>
+
+                {/* Upload Controls */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="cursor-pointer rounded-lg border border-[var(--usus-border)] px-4 py-2 text-xs font-medium text-[var(--usus-text)] transition-colors hover:bg-[var(--usus-surface-soft)]">
+                    {logoFile
+                      ? "Change logo"
+                      : organisation?.logo_url
+                        ? "Replace logo"
+                        : "Upload logo"}
+
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleLogoChange}
+                      disabled={saving !== null}
+                    />
+                  </label>
+
+                  {logoFile && (
+                    <button
+                      type="button"
+                      onClick={handleSaveLogo}
+                      disabled={saving !== null}
+                      className={buttonClassName}
+                    >
+                      {saving === "logo" ? "Uploading..." : "Save logo"}
+                    </button>
+                  )}
+
+                  {(logoFile || organisation?.logo_url) && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      disabled={saving !== null}
+                      className="text-xs font-medium text-[var(--usus-danger)] hover:underline disabled:opacity-50"
+                    >
+                      {logoFile
+                        ? "Cancel"
+                        : saving === "remove-logo"
+                          ? "Removing..."
+                          : "Remove"}
+                    </button>
+                  )}
+                </div>
+
+                {logoFile && (
+                  <p className="max-w-48 truncate text-xs text-[var(--usus-text-muted)]">
+                    {logoFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Organisation Status */}
             <InfoRow
               label="Status"
               value={
@@ -283,6 +539,7 @@ export default function CompanySettingsPage() {
               }
             />
 
+            {/* Organisation Date */}
             <InfoRow
               label="On USUS since"
               value={
@@ -298,11 +555,13 @@ export default function CompanySettingsPage() {
             title="Your Account"
             description="Your own details as a company admin."
           >
+            {/* Email */}
             <InfoRow
               label="Email"
               value={profile?.email ?? "—"}
             />
 
+            {/* Full Name */}
             <form
               onSubmit={handleName}
               className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
@@ -327,19 +586,15 @@ export default function CompanySettingsPage() {
 
                 <button
                   type="submit"
-                  disabled={
-                    !nameChanged ||
-                    saving === "name"
-                  }
+                  disabled={!nameChanged || saving === "name"}
                   className={buttonClassName}
                 >
-                  {saving === "name"
-                    ? "Saving..."
-                    : "Save"}
+                  {saving === "name" ? "Saving..." : "Save"}
                 </button>
               </div>
             </form>
 
+            {/* Password */}
             <form
               onSubmit={handlePassword}
               className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"
@@ -362,9 +617,7 @@ export default function CompanySettingsPage() {
                   autoComplete="current-password"
                   value={currentPassword}
                   onChange={(event) =>
-                    setCurrentPassword(
-                      event.target.value,
-                    )
+                    setCurrentPassword(event.target.value)
                   }
                   className={inputClassName}
                 />
@@ -404,6 +657,12 @@ export default function CompanySettingsPage() {
   );
 }
 
+/*
+ * ============================================================
+ * SETTINGS SECTION COMPONENT
+ * ============================================================
+ */
+
 function SettingsSection({
   title,
   description,
@@ -411,7 +670,7 @@ function SettingsSection({
 }: {
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="mt-6 rounded-[var(--usus-radius)] border border-[var(--usus-border)] bg-[var(--usus-surface)] shadow-[var(--usus-shadow)] first-of-type:mt-8">
@@ -431,6 +690,12 @@ function SettingsSection({
     </section>
   );
 }
+
+/*
+ * ============================================================
+ * INFORMATION ROW COMPONENT
+ * ============================================================
+ */
 
 function InfoRow({
   label,

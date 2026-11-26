@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Menu } from "lucide-react";
 
@@ -9,6 +10,12 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { useStaffArea } from "@/hooks/use-staff-area";
+
+import {
+  getMyOrganisation,
+  type MyOrganisation,
+} from "@/services/company-service";
+import Image from "next/image";
 
 interface CompanyAdminHeaderProps {
   onMenuClick?: () => void;
@@ -21,16 +28,69 @@ export function CompanyAdminHeader({
   const { user, logout } = useAuth();
   const area = useStaffArea();
 
-  const displayEmail = user?.email ?? user?.user_id ?? "Loading...";
+  const [organisation, setOrganisation] =
+    useState<MyOrganisation | null>(null);
+
+  const [logoError, setLogoError] = useState(false);
+
+  const displayEmail =
+    user?.email ?? user?.user_id ?? "Loading...";
 
   const displayRole = area.isManager
     ? "Manager"
     : "Company Admin";
 
+  // Load organisation branding
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadOrganisation() {
+      try {
+        const data = await getMyOrganisation();
+
+        if (!cancelled) {
+          setOrganisation(data);
+          setLogoError(false);
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load organisation branding:",
+          error
+        );
+      }
+    }
+
+    loadOrganisation();
+
+    // Listen for logo updates from Company Settings
+    function handleOrganisationUpdate() {
+      loadOrganisation();
+    }
+
+    window.addEventListener(
+      "usus-organisation-updated",
+      handleOrganisationUpdate
+    );
+
+    return () => {
+      cancelled = true;
+
+      window.removeEventListener(
+        "usus-organisation-updated",
+        handleOrganisationUpdate
+      );
+    };
+  }, []);
+
   function handleLogout() {
     logout();
     router.replace("/login");
   }
+
+  const organisationLogo =
+    organisation?.logo_url && !logoError
+      ? organisation.logo_url
+      : null;
 
   return (
     <header
@@ -45,9 +105,24 @@ export function CompanyAdminHeader({
     >
       <div className="flex h-full items-center justify-between px-3 sm:px-6 lg:px-8">
 
-        {/* LOGO */}
+        {/* ORGANISATION LOGO */}
         <div className="flex shrink-0 items-center">
-          <UsusLogo />
+
+          {organisationLogo ? (
+            <Image
+              src={organisationLogo}
+              alt={`${organisation?.name ?? "Organisation"} logo`}
+              onError={() => setLogoError(true)}
+              className="
+                h-10 max-w-[150px]
+                object-contain
+                md:h-12
+              "
+            />
+          ) : (
+            <UsusLogo />
+          )}
+
         </div>
 
         {/* RIGHT CONTROLS */}
@@ -86,6 +161,7 @@ export function CompanyAdminHeader({
 
             {/* EMAIL AND ROLE */}
             <div className="max-w-[200px] text-right">
+
               <p className="truncate text-xs font-semibold text-[var(--usus-text)]">
                 {displayEmail}
               </p>
@@ -93,9 +169,10 @@ export function CompanyAdminHeader({
               <p className="mt-1 text-[10px] text-[var(--usus-text-muted)]">
                 {displayRole}
               </p>
+
             </div>
 
-            {/* LOGOUT BESIDE EMAIL */}
+            {/* LOGOUT */}
             <button
               type="button"
               onClick={handleLogout}
@@ -117,8 +194,11 @@ export function CompanyAdminHeader({
               <LogOut size={15} />
               Logout
             </button>
+
           </div>
+
         </div>
+
       </div>
     </header>
   );

@@ -1,5 +1,11 @@
 import { apiClient } from "@/services/api-client";
 
+/*
+ * ============================================================
+ * ONBOARDING CHECKLIST TYPES
+ * ============================================================
+ */
+
 export interface OnboardingStep {
   key: string;
   title: string;
@@ -11,19 +17,23 @@ export interface OnboardingChecklist {
   steps: OnboardingStep[];
   completed: number;
   total: number;
-  launched_at: string | null;
-  dismissed: boolean;
 }
 
+/*
+ * ============================================================
+ * API REQUESTS
+ * ============================================================
+ */
+
+/**
+ * Retrieves the signed-in organisation's setup checklist.
+ *
+ * GET /api/v1/onboarding/checklist
+ *
+ * Company admin / manager only.
+ *
+ * The backend automatically determines completed steps.
+ */
 export async function getOnboardingChecklist(): Promise<OnboardingChecklist> {
   return apiClient<OnboardingChecklist>("/onboarding/checklist");
-}
-
-export async function updateOnboardingChecklist(
-  dismissed: boolean,
-): Promise<OnboardingChecklist> {
-  return apiClient<OnboardingChecklist>("/onboarding/checklist", {
-    method: "PATCH",
-    body: JSON.stringify({ dismissed }),
-  });
 }
