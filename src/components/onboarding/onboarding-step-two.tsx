@@ -122,7 +122,7 @@ export function OnboardingStepTwo({
 
         <div>
           <label htmlFor="referralSource" className={labelStyles}>
-            Where did you hear about USUS?
+            Where did you hear about Us?
           </label>
 
           <select

@@ -37,18 +37,55 @@ export function OrganisationSetupChecklist({
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
 
-  // Map backend checklist keys to dashboard routes.
+  /*
+   * Map checklist steps to their dashboard pages.
+   * Add the exact backend step keys here if they differ.
+   */
   const destinations: Record<string, string> = {
     subscription: subscriptionHref,
+    subscription_setup: subscriptionHref,
+    billing: subscriptionHref,
+    plan: subscriptionHref,
+
     knowledge_base: knowledgeBaseHref,
     knowledge: knowledgeBaseHref,
+    upload_documents: knowledgeBaseHref,
+    documents: knowledgeBaseHref,
+
     team: teamHref,
     managers: teamHref,
+    invite_team: teamHref,
+    team_management: teamHref,
+    invite_managers: teamHref,
+
     settings: settingsHref,
     company_settings: settingsHref,
+    organisation_settings: settingsHref,
+    profile: settingsHref,
+    company_profile: settingsHref,
   };
 
-  // Fetch checklist from backend.
+  /*
+   * Resolve a destination for every checklist item.
+   * Unknown keys fall back to company settings.
+   */
+  function getDestination(key: string): string {
+    const normalisedKey = key.toLowerCase().trim();
+
+    return destinations[normalisedKey] ?? settingsHref;
+  }
+
+  /*
+   * FIRST-TIME PLATFORM VISIT
+   *
+   * The backend's dismissed field is used as the
+   * persistent first-display marker in this version.
+   *
+   * When dismissed is false:
+   * 1. Open the checklist.
+   * 2. Save dismissed=true immediately.
+   * 3. Do not automatically open it again on future sign-ins.
+   */
   useEffect(() => {
     let active = true;
 
@@ -56,8 +93,28 @@ export function OrganisationSetupChecklist({
       try {
         const result = await getOnboardingChecklist();
 
-        if (active) {
-          setChecklist(result);
+        if (!active) return;
+
+        setChecklist(result);
+
+        if (!result.dismissed) {
+          setIsOpen(true);
+
+          try {
+            const updated = await updateOnboardingChecklist(true);
+
+            if (active) {
+              setChecklist(updated);
+            }
+          } catch (err) {
+            if (active) {
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "Unable to save your onboarding progress.",
+              );
+            }
+          }
         }
       } catch (err) {
         if (active) {
@@ -81,13 +138,14 @@ export function OrganisationSetupChecklist({
     };
   }, []);
 
-  // Retry checklist request.
+  // Retry loading the checklist.
   async function handleRetry() {
     setError("");
     setIsLoading(true);
 
     try {
       const result = await getOnboardingChecklist();
+
       setChecklist(result);
     } catch (err) {
       setError(
@@ -100,28 +158,9 @@ export function OrganisationSetupChecklist({
     }
   }
 
-  // Hide or show checklist through backend.
-  async function handleDismiss(dismissed: boolean) {
-    setError("");
-    setIsUpdating(true);
-
-    try {
-      const result = await updateOnboardingChecklist(dismissed);
-
-      setChecklist(result);
-
-      if (dismissed) {
-        setIsOpen(false);
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to update your checklist.",
-      );
-    } finally {
-      setIsUpdating(false);
-    }
+  // Close the panel without resetting its first-visit marker.
+  function handleClose() {
+    setIsOpen(false);
   }
 
   const completed = checklist?.completed ?? 0;
@@ -138,111 +177,103 @@ export function OrganisationSetupChecklist({
 
   return (
     <>
-      {/* FLOATING REMINDER */}
+      {/* FLOATING BUTTON - TOP RIGHT */}
       {!isOpen && (
         <button
           type="button"
-          onClick={() => {
-            setIsOpen(true);
-
-            if (checklist?.dismissed) {
-              void handleDismiss(false);
-            }
-          }}
+          onClick={() => setIsOpen(true)}
           aria-label="Open organisation setup checklist"
           className="
-            fixed bottom-6 left-5 z-[90]
-            flex h-16 w-16 items-center justify-center
-            rounded-full border border-[var(--usus-border)]
-            bg-[var(--usus-surface)]
-            text-[var(--usus-text)]
-            shadow-xl transition-colors
-            hover:border-[var(--usus-primary)]
-            md:left-[17rem]
+            fixed right-6 top-[110px] z-[90]
+  flex h-14 w-14 items-center justify-center
+  rounded-full border border-[var(--usus-border)]
+  bg-[var(--usus-surface)]
+  shadow-xl transition-colors
+  hover:border-[var(--usus-primary)]
           "
         >
-          <span className="
-            relative flex h-11 w-11 items-center justify-center
-            rounded-full bg-[var(--usus-primary-soft)]
-          ">
-            <span className="
-              text-sm font-bold
-              text-[var(--usus-primary)]
-            ">
+          <span
+            className="
+              relative flex h-11 w-11 items-center justify-center
+              rounded-full bg-[var(--usus-primary-soft)]
+            "
+          >
+            <span
+              className="
+                text-sm font-bold
+                text-[var(--usus-primary)]
+              "
+            >
               {isLoading ? "..." : `${progress}%`}
             </span>
 
             {progress < 100 && (
-              <span className="
-                absolute -right-1 -top-1 h-3 w-3
-                rounded-full border-2
-                border-[var(--usus-surface)]
-                bg-[var(--usus-primary)]
-              " />
+              <span
+                className="
+                  absolute -right-1 -top-1 h-3 w-3
+                  rounded-full border-2
+                  border-[var(--usus-surface)]
+                  bg-[var(--usus-primary)]
+                "
+              />
             )}
           </span>
         </button>
       )}
 
-      {/* BACKDROP */}
-      {isOpen && (
-        <button
-          type="button"
-          aria-label="Close setup panel"
-          onClick={() => setIsOpen(false)}
-          className="
-            fixed inset-0 z-[80]
-            cursor-default bg-black/30
-            backdrop-blur-[2px]
-          "
-        />
-      )}
-
       {/* CHECKLIST PANEL */}
       <aside
-        aria-label="Organisation setup checklist"
-        aria-hidden={!isOpen}
-        className={`
-          fixed bottom-0 left-0 top-0 z-[100]
-          flex w-[min(100%,380px)] flex-col
-          border-r border-[var(--usus-border)]
-          bg-[var(--usus-surface)]
-          shadow-2xl
-          transition-transform duration-300 ease-in-out
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
-      >
+  aria-label="Organisation setup checklist"
+  aria-hidden={!isOpen}
+  className={`
+    fixed bottom-0 right-0 top-0 z-[100]
+    flex w-[min(100%,380px)] flex-col
+    border-l border-[var(--usus-border)]
+    bg-[var(--usus-surface)]
+    shadow-2xl
+    transition-transform duration-300 ease-in-out
+    ${isOpen ? "translate-x-0" : "translate-x-full"}
+  `}
+>
         {/* HEADER */}
-        <div className="
-          flex items-start justify-between
-          border-b border-[var(--usus-border)] p-6
-        ">
+        <div
+          className="
+            flex items-start justify-between
+            border-b border-[var(--usus-border)] p-6
+          "
+        >
           <div>
-            <p className="
-              text-xs font-semibold uppercase tracking-wider
-              text-[var(--usus-primary)]
-            ">
+            <p
+              className="
+                text-xs font-semibold uppercase tracking-wider
+                text-[var(--usus-primary)]
+              "
+            >
               Organisation setup
             </p>
 
-            <h2 className="
-              mt-2 text-xl font-bold
-              text-[var(--usus-text)]
-            ">
+            <h2
+              className="
+                mt-2 text-xl font-bold
+                text-[var(--usus-text)]
+              "
+            >
               Getting started
             </h2>
 
-            <p className="
-              mt-1 text-sm
-              text-[var(--usus-text-muted)]
-            ">
-              Your company setup checklist.
+            <p
+              className="
+                mt-1 text-sm
+                text-[var(--usus-text-muted)]
+              "
+            >
+              Complete these steps to get your organisation ready.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             aria-label="Close setup panel"
             className="
               flex h-9 w-9 shrink-0
@@ -257,21 +288,27 @@ export function OrganisationSetupChecklist({
         </div>
 
         {/* PROGRESS */}
-        <div className="
-          border-b border-[var(--usus-border-soft)] p-6
-        ">
+        <div
+          className="
+            border-b border-[var(--usus-border-soft)] p-6
+          "
+        >
           <div className="mb-3 flex items-center justify-between">
-            <span className="
-              text-sm font-semibold
-              text-[var(--usus-text)]
-            ">
+            <span
+              className="
+                text-sm font-semibold
+                text-[var(--usus-text)]
+              "
+            >
               Setup progress
             </span>
 
-            <span className="
-              text-sm font-bold
-              text-[var(--usus-primary)]
-            ">
+            <span
+              className="
+                text-sm font-bold
+                text-[var(--usus-primary)]
+              "
+            >
               {progress}%
             </span>
           </div>
@@ -297,32 +334,38 @@ export function OrganisationSetupChecklist({
             />
           </div>
 
-          <p className="
-            mt-3 text-xs
-            text-[var(--usus-text-muted)]
-          ">
+          <p
+            className="
+              mt-3 text-xs
+              text-[var(--usus-text-muted)]
+            "
+          >
             {completed} of {total} steps completed
           </p>
         </div>
 
-        {/* CHECKLIST STEPS */}
+        {/* CHECKLIST ITEMS */}
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
           {isLoading && (
-            <div className="
-              flex items-center justify-center
-              gap-2 py-8 text-sm
-              text-[var(--usus-text-muted)]
-            ">
+            <div
+              className="
+                flex items-center justify-center
+                gap-2 py-8 text-sm
+                text-[var(--usus-text-muted)]
+              "
+            >
               <Loader2 size={17} className="animate-spin" />
               Loading setup progress...
             </div>
           )}
 
           {!isLoading && error && (
-            <div className="
-              border border-[var(--usus-danger)]/30
-              bg-[var(--usus-surface-soft)] p-4
-            ">
+            <div
+              className="
+                border border-[var(--usus-danger)]/30
+                bg-[var(--usus-surface-soft)] p-4
+              "
+            >
               <div className="flex items-start gap-2">
                 <AlertCircle
                   size={17}
@@ -330,17 +373,21 @@ export function OrganisationSetupChecklist({
                 />
 
                 <div>
-                  <p className="
-                    text-sm font-semibold
-                    text-[var(--usus-text)]
-                  ">
+                  <p
+                    className="
+                      text-sm font-semibold
+                      text-[var(--usus-text)]
+                    "
+                  >
                     Unable to load checklist
                   </p>
 
-                  <p className="
-                    mt-1 text-xs
-                    text-[var(--usus-text-muted)]
-                  ">
+                  <p
+                    className="
+                      mt-1 text-xs
+                      text-[var(--usus-text-muted)]
+                    "
+                  >
                     {error}
                   </p>
 
@@ -362,133 +409,154 @@ export function OrganisationSetupChecklist({
 
           {!isLoading &&
             !error &&
-            checklist?.steps.map((step) => {
-              const destination = destinations[step.key];
+            checklist?.steps.map((step) => (
+              <div
+                key={step.key}
+                className={`
+                  border p-4 transition-colors
+                  ${
+                    step.done
+                      ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
+                      : "border-[var(--usus-border-soft)] bg-[var(--usus-surface-soft)]"
+                  }
+                `}
+              >
+                <div className="flex items-start gap-3">
+                  {/* COMPLETION STATUS */}
+                  <span
+                    className={`
+                      mt-0.5 flex h-5 w-5 shrink-0
+                      items-center justify-center border
+                      ${
+                        step.done
+                          ? "border-[var(--usus-primary)] bg-[var(--usus-primary)] text-black"
+                          : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
+                      }
+                    `}
+                  >
+                    {step.done && (
+                      <Check size={13} strokeWidth={3} />
+                    )}
+                  </span>
 
-              return (
-                <div
-                  key={step.key}
-                  className={`
-                    border p-4 transition-colors
-                    ${
-                      step.done
-                        ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
-                        : "border-[var(--usus-border-soft)] bg-[var(--usus-surface-soft)]"
-                    }
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* COMPLETION STATUS */}
-                    <span
+                  {/* STEP DETAILS */}
+                  <div className="min-w-0 flex-1">
+                    <p
                       className={`
-                        mt-0.5 flex h-5 w-5 shrink-0
-                        items-center justify-center border
-                        ${
-                          step.done
-                            ? "border-[var(--usus-primary)] bg-[var(--usus-primary)] text-black"
-                            : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
-                        }
-                      `}
-                    >
-                      {step.done && (
-                        <Check size={13} strokeWidth={3} />
-                      )}
-                    </span>
-
-                    {/* STEP INFORMATION */}
-                    <div className="min-w-0 flex-1">
-                      <p className={`
                         text-sm font-semibold
                         ${
                           step.done
                             ? "text-[var(--usus-text-muted)]"
                             : "text-[var(--usus-text)]"
                         }
-                      `}>
-                        {step.title}
-                      </p>
+                      `}
+                    >
+                      {step.title}
+                    </p>
 
-                      <p className="
+                    <p
+                      className="
                         mt-1 text-xs leading-5
                         text-[var(--usus-text-muted)]
-                      ">
-                        {step.description}
-                      </p>
+                      "
+                    >
+                      {step.description}
+                    </p>
 
-                      {destination && (
-                        <Link
-                          href={destination}
-                          onClick={() => setIsOpen(false)}
-                          className="
-                            mt-3 inline-flex items-center gap-1
-                            text-xs font-semibold
-                            text-[var(--usus-primary)]
-                            hover:underline
-                          "
-                        >
-                          View details
-                          <ChevronRight size={14} />
-                        </Link>
-                      )}
-                    </div>
+                    {/* EVERY CHECKLIST ITEM HAS A PAGE LINK */}
+                    <Link
+                      href={getDestination(step.key)}
+                      onClick={handleClose}
+                      className="
+                        mt-3 inline-flex items-center gap-1
+                        text-xs font-semibold
+                        text-[var(--usus-primary)]
+                        hover:underline
+                      "
+                    >
+                      {step.done ? "View page" : "Get started"}
+                      <ChevronRight size={14} />
+                    </Link>
+                  </div>
 
-                    {step.done && (
-                      <span className="
+                  {step.done && (
+                    <span
+                      className="
                         shrink-0 text-[10px] font-semibold
                         text-[var(--usus-primary)]
-                      ">
-                        DONE
-                      </span>
-                    )}
-                  </div>
+                      "
+                    >
+                      DONE
+                    </span>
+                  )}
                 </div>
-              );
-            })}
+              </div>
+            ))}
         </div>
 
         {/* FOOTER */}
-        <div className="
-          border-t border-[var(--usus-border)] p-5
-        ">
+        <div
+          className="
+            border-t border-[var(--usus-border)] p-5
+          "
+        >
           {progress === 100 && !isLoading && !error ? (
             <div className="text-center">
-              <div className="
-                mx-auto flex h-10 w-10
-                items-center justify-center
-                rounded-full bg-[var(--usus-primary-soft)]
-                text-[var(--usus-primary)]
-              ">
+              <div
+                className="
+                  mx-auto flex h-10 w-10
+                  items-center justify-center
+                  rounded-full bg-[var(--usus-primary-soft)]
+                  text-[var(--usus-primary)]
+                "
+              >
                 <Check size={20} />
               </div>
 
-              <p className="
-                mt-3 text-sm font-semibold
-                text-[var(--usus-text)]
-              ">
+              <p
+                className="
+                  mt-3 text-sm font-semibold
+                  text-[var(--usus-text)]
+                "
+              >
                 Organisation setup complete!
               </p>
+
+              <button
+                type="button"
+                onClick={handleClose}
+                className="
+                  mt-4 text-xs font-semibold
+                  text-[var(--usus-text-muted)]
+                  transition-colors
+                  hover:text-[var(--usus-primary)]
+                "
+              >
+                Close checklist
+              </button>
             </div>
           ) : (
             <div>
-              <p className="
-                text-xs leading-5
-                text-[var(--usus-text-muted)]
-              ">
+              <p
+                className="
+                  text-xs leading-5
+                  text-[var(--usus-text-muted)]
+                "
+              >
                 These steps are optional and do not restrict access to your organisation.
               </p>
 
               <button
                 type="button"
-                disabled={isUpdating}
-                onClick={() => void handleDismiss(true)}
+                onClick={handleClose}
                 className="
                   mt-4 text-xs font-semibold
                   text-[var(--usus-text-muted)]
-                  transition-colors hover:text-[var(--usus-primary)]
-                  disabled:opacity-50
+                  transition-colors
+                  hover:text-[var(--usus-primary)]
                 "
               >
-                {isUpdating ? "Updating..." : "Hide checklist"}
+                Hide checklist
               </button>
             </div>
           )}
