@@ -168,7 +168,7 @@ export function OnboardingStepTwo({
 
           <button
             type="submit"
-            className="h-12 flex-1 border border-[var(--usus-primary)] bg-[var(--usus-primary)] text-sm font-semibold text-[#252624] transition hover:bg-[var(--usus-primary-hover)]"
+            className="h-12 flex-1 border border-[var(--usus-primary)] bg-[var(--usus-primary)] text-sm font-semibold text-[#f7f6f1] transition hover:bg-[var(--usus-primary-hover)]"
           >
             Continue
           </button>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+
 import {
   AlertCircle,
   Check,
@@ -12,7 +13,6 @@ import {
 
 import {
   getOnboardingChecklist,
-  updateOnboardingChecklist,
   type OnboardingChecklist,
 } from "@/services/onboarding-service";
 
@@ -32,15 +32,22 @@ export function OrganisationSetupChecklist({
   const [checklist, setChecklist] =
     useState<OnboardingChecklist | null>(null);
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
 
+  // Prevent overlapping API requests.
+  const requestInProgress = useRef(false);
+
+  // Prevent state updates after unmount.
+  const mounted = useRef(false);
+
   /*
-   * Map checklist steps to their dashboard pages.
-   * Add the exact backend step keys here if they differ.
+   * ============================================================
+   * CHECKLIST DESTINATIONS
+   * ============================================================
    */
+
   const destinations: Record<string, string> = {
     subscription: subscriptionHref,
     subscription_setup: subscriptionHref,
@@ -65,10 +72,6 @@ export function OrganisationSetupChecklist({
     company_profile: settingsHref,
   };
 
-  /*
-   * Resolve a destination for every checklist item.
-   * Unknown keys fall back to company settings.
-   */
   function getDestination(key: string): string {
     const normalisedKey = key.toLowerCase().trim();
 
@@ -76,108 +79,149 @@ export function OrganisationSetupChecklist({
   }
 
   /*
-   * FIRST-TIME PLATFORM VISIT
-   *
-   * The backend's dismissed field is used as the
-   * persistent first-display marker in this version.
-   *
-   * When dismissed is false:
-   * 1. Open the checklist.
-   * 2. Save dismissed=true immediately.
-   * 3. Do not automatically open it again on future sign-ins.
+   * ============================================================
+   * LOAD CHECKLIST
+   * ============================================================
    */
-  useEffect(() => {
-    let active = true;
 
-    async function loadChecklist() {
-      try {
-        const result = await getOnboardingChecklist();
+  const loadChecklist = useCallback(async () => {
+    if (requestInProgress.current) return;
 
-        if (!active) return;
-
-        setChecklist(result);
-
-        if (!result.dismissed) {
-          setIsOpen(true);
-
-          try {
-            const updated = await updateOnboardingChecklist(true);
-
-            if (active) {
-              setChecklist(updated);
-            }
-          } catch (err) {
-            if (active) {
-              setError(
-                err instanceof Error
-                  ? err.message
-                  : "Unable to save your onboarding progress.",
-              );
-            }
-          }
-        }
-      } catch (err) {
-        if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to load your setup checklist.",
-          );
-        }
-      } finally {
-        if (active) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadChecklist();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Retry loading the checklist.
-  async function handleRetry() {
-    setError("");
-    setIsLoading(true);
+    requestInProgress.current = true;
 
     try {
       const result = await getOnboardingChecklist();
 
+      if (!mounted.current) return;
+
       setChecklist(result);
+      setError("");
     } catch (err) {
+      if (!mounted.current) return;
+
       setError(
         err instanceof Error
           ? err.message
           : "Unable to load your setup checklist.",
       );
     } finally {
-      setIsLoading(false);
+      requestInProgress.current = false;
+
+      if (mounted.current) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  /*
+   * ============================================================
+   * INITIAL LOAD AND AUTOMATIC REFRESH
+   * ============================================================
+   */
+
+ useEffect(() => {
+  mounted.current = true;
+
+  // Initial loading state is already true.
+  // Deferring via queueMicrotask avoids synchronous setState inside the effect.
+  queueMicrotask(() => {
+    if (mounted.current) {
+      void loadChecklist();
+    }
+  });
+
+  // Refresh every 30 seconds.
+  const interval = window.setInterval(() => {
+    if (document.visibilityState === "visible") {
+      void loadChecklist();
+    }
+  }, 30_000);
+
+  // Refresh when the browser tab becomes visible.
+  function handleVisibilityChange() {
+    if (document.visibilityState === "visible") {
+      void loadChecklist();
     }
   }
 
-  // Close the panel without resetting its first-visit marker.
+  // Allow other components to request a refresh.
+  function handleChecklistRefresh() {
+    void loadChecklist();
+  }
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange,
+  );
+
+  window.addEventListener(
+    "usus-onboarding-checklist-refresh",
+    handleChecklistRefresh,
+  );
+
+  return () => {
+    mounted.current = false;
+
+    window.clearInterval(interval);
+
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    window.removeEventListener(
+      "usus-onboarding-checklist-refresh",
+      handleChecklistRefresh,
+    );
+  };
+}, [loadChecklist]);
+
+
+  /*
+   * ============================================================
+   * RETRY
+   * ============================================================
+   */
+
+  function handleRetry() {
+    setError("");
+    setIsLoading(true);
+    void loadChecklist();
+  }
+
+  /*
+   * ============================================================
+   * CLOSE CHECKLIST
+   * ============================================================
+   */
+
   function handleClose() {
     setIsOpen(false);
   }
+
+  /*
+   * ============================================================
+   * PROGRESS CALCULATION
+   * ============================================================
+   */
 
   const completed = checklist?.completed ?? 0;
   const total = checklist?.total ?? 0;
 
   const progress =
     total > 0
-      ? Math.round((completed / total) * 100)
+      ? Math.min(100, Math.round((completed / total) * 100))
       : 0;
 
-  if (isLoading && !checklist) {
-    return null;
-  }
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <>
-      {/* FLOATING BUTTON - TOP RIGHT */}
+      {/* FLOATING CHECKLIST BUTTON */}
       {!isOpen && (
         <button
           type="button"
@@ -185,11 +229,11 @@ export function OrganisationSetupChecklist({
           aria-label="Open organisation setup checklist"
           className="
             fixed right-6 top-[110px] z-[90]
-  flex h-14 w-14 items-center justify-center
-  rounded-full border border-[var(--usus-border)]
-  bg-[var(--usus-surface)]
-  shadow-xl transition-colors
-  hover:border-[var(--usus-primary)]
+            flex h-14 w-14 items-center justify-center
+            rounded-full border border-[var(--usus-border)]
+            bg-[var(--usus-surface)]
+            shadow-xl transition-colors
+            hover:border-[var(--usus-primary)]
           "
         >
           <span
@@ -204,7 +248,7 @@ export function OrganisationSetupChecklist({
                 text-[var(--usus-primary)]
               "
             >
-              {isLoading ? "..." : `${progress}%`}
+              {isLoading && !checklist ? "..." : `${progress}%`}
             </span>
 
             {progress < 100 && (
@@ -223,18 +267,18 @@ export function OrganisationSetupChecklist({
 
       {/* CHECKLIST PANEL */}
       <aside
-  aria-label="Organisation setup checklist"
-  aria-hidden={!isOpen}
-  className={`
-    fixed bottom-0 right-0 top-0 z-[100]
-    flex w-[min(100%,380px)] flex-col
-    border-l border-[var(--usus-border)]
-    bg-[var(--usus-surface)]
-    shadow-2xl
-    transition-transform duration-300 ease-in-out
-    ${isOpen ? "translate-x-0" : "translate-x-full"}
-  `}
->
+        aria-label="Organisation setup checklist"
+        aria-hidden={!isOpen}
+        className={`
+          fixed bottom-0 right-0 top-0 z-[100]
+          flex w-[min(100%,380px)] flex-col
+          border-l border-[var(--usus-border)]
+          bg-[var(--usus-surface)]
+          shadow-2xl
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+      >
         {/* HEADER */}
         <div
           className="
@@ -288,11 +332,7 @@ export function OrganisationSetupChecklist({
         </div>
 
         {/* PROGRESS */}
-        <div
-          className="
-            border-b border-[var(--usus-border-soft)] p-6
-          "
-        >
+        <div className="border-b border-[var(--usus-border-soft)] p-6">
           <div className="mb-3 flex items-center justify-between">
             <span
               className="
@@ -346,7 +386,8 @@ export function OrganisationSetupChecklist({
 
         {/* CHECKLIST ITEMS */}
         <div className="flex-1 space-y-3 overflow-y-auto p-5">
-          {isLoading && (
+          {/* LOADING */}
+          {isLoading && !checklist && (
             <div
               className="
                 flex items-center justify-center
@@ -359,7 +400,8 @@ export function OrganisationSetupChecklist({
             </div>
           )}
 
-          {!isLoading && error && (
+          {/* ERROR */}
+          {!isLoading && error && !checklist && (
             <div
               className="
                 border border-[var(--usus-danger)]/30
@@ -369,7 +411,10 @@ export function OrganisationSetupChecklist({
               <div className="flex items-start gap-2">
                 <AlertCircle
                   size={17}
-                  className="mt-0.5 shrink-0 text-[var(--usus-danger)]"
+                  className="
+                    mt-0.5 shrink-0
+                    text-[var(--usus-danger)]
+                  "
                 />
 
                 <div>
@@ -393,7 +438,7 @@ export function OrganisationSetupChecklist({
 
                   <button
                     type="button"
-                    onClick={() => void handleRetry()}
+                    onClick={handleRetry}
                     className="
                       mt-3 text-xs font-semibold
                       text-[var(--usus-primary)]
@@ -407,100 +452,139 @@ export function OrganisationSetupChecklist({
             </div>
           )}
 
-          {!isLoading &&
-            !error &&
-            checklist?.steps.map((step) => (
-              <div
-                key={step.key}
-                className={`
-                  border p-4 transition-colors
-                  ${
-                    step.done
-                      ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
-                      : "border-[var(--usus-border-soft)] bg-[var(--usus-surface-soft)]"
-                  }
-                `}
+          {/* REFRESH ERROR WITH PREVIOUS DATA */}
+          {!isLoading && error && checklist && (
+            <div
+              className="
+                flex items-center gap-2
+                rounded-lg border
+                border-[var(--usus-danger)]/30
+                p-3 text-xs
+                text-[var(--usus-danger)]
+              "
+            >
+              <AlertCircle size={15} />
+
+              <span>
+                Unable to refresh checklist. Showing previous progress.
+              </span>
+
+              <button
+                type="button"
+                onClick={handleRetry}
+                className="ml-auto font-semibold underline"
               >
-                <div className="flex items-start gap-3">
-                  {/* COMPLETION STATUS */}
-                  <span
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* CHECKLIST */}
+          {checklist?.steps.map((step) => (
+            <div
+              key={step.key}
+              className={`
+                border p-4 transition-colors
+                ${
+                  step.done
+                    ? "border-[var(--usus-primary)] bg-[var(--usus-primary-soft)]"
+                    : "border-[var(--usus-border-soft)] bg-[var(--usus-surface-soft)]"
+                }
+              `}
+            >
+              <div className="flex items-start gap-3">
+                {/* COMPLETION STATUS */}
+                <span
+                  className={`
+                    mt-0.5 flex h-5 w-5 shrink-0
+                    items-center justify-center border
+                    ${
+                      step.done
+                        ? "border-[var(--usus-primary)] bg-[var(--usus-primary)] text-black"
+                        : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
+                    }
+                  `}
+                >
+                  {step.done && (
+                    <Check size={13} strokeWidth={3} />
+                  )}
+                </span>
+
+                {/* STEP DETAILS */}
+                <div className="min-w-0 flex-1">
+                  <p
                     className={`
-                      mt-0.5 flex h-5 w-5 shrink-0
-                      items-center justify-center border
+                      text-sm font-semibold
                       ${
                         step.done
-                          ? "border-[var(--usus-primary)] bg-[var(--usus-primary)] text-black"
-                          : "border-[var(--usus-border)] bg-[var(--usus-surface)]"
+                          ? "text-[var(--usus-text-muted)]"
+                          : "text-[var(--usus-text)]"
                       }
                     `}
                   >
-                    {step.done && (
-                      <Check size={13} strokeWidth={3} />
-                    )}
-                  </span>
+                    {step.title}
+                  </p>
 
-                  {/* STEP DETAILS */}
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`
-                        text-sm font-semibold
-                        ${
-                          step.done
-                            ? "text-[var(--usus-text-muted)]"
-                            : "text-[var(--usus-text)]"
-                        }
-                      `}
-                    >
-                      {step.title}
-                    </p>
+                  <p
+                    className="
+                      mt-1 text-xs leading-5
+                      text-[var(--usus-text-muted)]
+                    "
+                  >
+                    {step.description}
+                  </p>
 
-                    <p
-                      className="
-                        mt-1 text-xs leading-5
-                        text-[var(--usus-text-muted)]
-                      "
-                    >
-                      {step.description}
-                    </p>
-
-                    {/* EVERY CHECKLIST ITEM HAS A PAGE LINK */}
-                    <Link
-                      href={getDestination(step.key)}
-                      onClick={handleClose}
-                      className="
-                        mt-3 inline-flex items-center gap-1
-                        text-xs font-semibold
-                        text-[var(--usus-primary)]
-                        hover:underline
-                      "
-                    >
-                      {step.done ? "View page" : "Get started"}
-                      <ChevronRight size={14} />
-                    </Link>
-                  </div>
-
-                  {step.done && (
-                    <span
-                      className="
-                        shrink-0 text-[10px] font-semibold
-                        text-[var(--usus-primary)]
-                      "
-                    >
-                      DONE
-                    </span>
-                  )}
+                  <Link
+                    href={getDestination(step.key)}
+                    onClick={handleClose}
+                    className="
+                      mt-3 inline-flex items-center gap-1
+                      text-xs font-semibold
+                      text-[var(--usus-primary)]
+                      hover:underline
+                    "
+                  >
+                    {step.done ? "View page" : "Get started"}
+                    <ChevronRight size={14} />
+                  </Link>
                 </div>
+
+                {step.done && (
+                  <span
+                    className="
+                      shrink-0 text-[10px] font-semibold
+                      text-[var(--usus-primary)]
+                    "
+                  >
+                    DONE
+                  </span>
+                )}
               </div>
-            ))}
+            </div>
+          ))}
+
+          {/* EMPTY CHECKLIST */}
+          {!isLoading &&
+            !error &&
+            checklist &&
+            checklist.steps.length === 0 && (
+              <p
+                className="
+                  py-8 text-center text-sm
+                  text-[var(--usus-text-muted)]
+                "
+              >
+                No setup steps are currently available.
+              </p>
+            )}
         </div>
 
         {/* FOOTER */}
-        <div
-          className="
-            border-t border-[var(--usus-border)] p-5
-          "
-        >
-          {progress === 100 && !isLoading && !error ? (
+        <div className="border-t border-[var(--usus-border)] p-5">
+          {progress === 100 &&
+          !isLoading &&
+          !error &&
+          total > 0 ? (
             <div className="text-center">
               <div
                 className="
@@ -543,7 +627,8 @@ export function OrganisationSetupChecklist({
                   text-[var(--usus-text-muted)]
                 "
               >
-                These steps are optional and do not restrict access to your organisation.
+                These steps are optional and do not restrict access
+                to your organisation.
               </p>
 
               <button

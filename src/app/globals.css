@@ -1,91 +1,126 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 /* =========================================================
-   USUS DESIGN TOKENS
+   USUS BRAND + PRODUCT TOKENS
+   Based on Usus Brand Guidelines v1.0 — November 2026
    ========================================================= */
 
 :root {
-  --font-body: 'Geist Sans', 'Geist', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  color-scheme: light;
 
-  --usus-background: #f2f1ed;
-  --usus-surface: #faf9f5;
-  --usus-surface-soft: #f6f5f1;
-  --usus-muted: #e8e7e1;
+  /* Typography */
+  --font-body: "Figtree", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
 
-  --usus-text: #252624;
-  --usus-text-muted: #70716d;
-  --usus-text-soft: #92938e;
+  /* Brand palette */
+  --usus-brand-teal: #263A43;
+  --usus-brand-ivory: #F7F6F1;
+  --usus-brand-white: #FFFFFF;
 
-  --usus-border: #d9d8d2;
-  --usus-border-soft: #e5e4de;
+  /* Light mode product colours */
+  --usus-background: #F7F6F1;
+  --usus-surface: #FFFFFF;
+  --usus-surface-soft: #EAEEEE;
+  --usus-muted: #EAEEEE;
 
-  --usus-primary: #8fb83e;
-  --usus-primary-hover: #7fa637;
-  --usus-primary-soft: #e7eed5;
+  --usus-text: #1B2A31;
+  --usus-text-muted: #5B676C;
+  --usus-text-soft: #5B676C;
 
-  --usus-success: #8fb83e;
-  --usus-danger: #c95a3d;
-  --usus-warning: #c89432;
+  --usus-border: #E3E1D9;
+  --usus-border-soft: #E3E1D9;
 
-  --usus-sidebar: #faf9f5;
-  --usus-sidebar-hover: #f2f1ed;
-  --usus-sidebar-active: #e7eed5;
+  /* Primary action: Deep Teal with Warm Ivory text */
+  --usus-primary: #263A43;
+  --usus-primary-hover: #1D3038;
+  --usus-primary-soft: #EAEEEE;
+  --usus-on-primary: #F7F6F1;
 
-  --usus-header: #faf9f5;
-  --usus-header-border: #d9d8d2;
+  /* Semantic colours */
+  --usus-success: #263A43;
+  --usus-success-soft: #EAEEEE;
+  --usus-danger: #B3261E;
+  --usus-danger-soft: #F8E9E7;
+  --usus-warning: #5B676C;
+  --usus-warning-soft: #EAEEEE;
 
-  --usus-progress-track: #deddd7;
+  /* Navigation and chrome */
+  --usus-sidebar: #FFFFFF;
+  --usus-sidebar-hover: #F7F6F1;
+  --usus-sidebar-active: #EAEEEE;
 
---usus-grid: rgba(160, 65, 75, 0.16);
+  --usus-header: #FFFFFF;
+  --usus-header-border: #E3E1D9;
+
+  --usus-progress-track: #E3E1D9;
+  --usus-grid: rgba(38, 58, 67, 0.08);
 
   --usus-shadow:
-    0 1px 2px rgba(37, 38, 36, 0.04),
-    0 8px 24px rgba(37, 38, 36, 0.06);
+    0 1px 2px rgba(27, 42, 49, 0.04),
+    0 8px 24px rgba(27, 42, 49, 0.06);
 
-  --usus-radius: 14px;
-};
+  --usus-radius: 12px;
+}
 
 /* =========================================================
    DARK THEME
+   Deep teal-black surfaces; Warm Ivory for text and actions.
+   Never use Deep Teal for text, logos or icons on dark surfaces.
    ========================================================= */
 
 .dark {
-  --usus-background: #171817;
-  --usus-surface: #222321;
-  --usus-surface-soft: #292a27;
-  --usus-muted: #30312e;
+  color-scheme: dark;
 
-  --usus-text: #e8e7e1;
-  --usus-text-muted: #a7a8a2;
-  --usus-text-soft: #858680;
+  --usus-background: #121C21;
+  --usus-surface: #18252B;
+  --usus-surface-soft: #22333A;
+  --usus-muted: #22333A;
 
-  --usus-border: #3a3b38;
-  --usus-border-soft: #30312e;
+  --usus-text: #EDEBE4;
+  --usus-text-muted: #A3AFB3;
+  --usus-text-soft: #A3AFB3;
 
-  --usus-primary: #8fb83e;
-  --usus-primary-hover: #9fc94b;
-  --usus-primary-soft: #354021;
+  --usus-border: #2A3A41;
+  --usus-border-soft: #2A3A41;
 
-  --usus-success: #8fb83e;
-  --usus-danger: #d66a4c;
-  --usus-warning: #d2a44b;
+  /* Primary action: Warm Ivory with Deep Teal text */
+  --usus-primary: #F7F6F1;
+  --usus-primary-hover: #FFFFFF;
+  --usus-primary-soft: #22333A;
+  --usus-on-primary: #263A43;
 
-  --usus-sidebar: #1d1e1c;
-  --usus-sidebar-hover: #292a27;
-  --usus-sidebar-active: #354021;
+  --usus-success: #F7F6F1;
+  --usus-success-soft: #22333A;
+  --usus-danger: #F2A49E;
+  --usus-danger-soft: #3A292B;
+  --usus-warning: #A3AFB3;
+  --usus-warning-soft: #22333A;
 
-  --usus-header: #171817;
-  --usus-header-border: #30312e;
+  --usus-sidebar: #18252B;
+  --usus-sidebar-hover: #22333A;
+  --usus-sidebar-active: #22333A;
 
-  --usus-progress-track: #353633;
-  
-  --usus-grid: rgba(255, 255, 255, 0.08);
+  --usus-header: #121C21;
+  --usus-header-border: #2A3A41;
+
+  --usus-progress-track: #2A3A41;
+  --usus-grid: rgba(247, 246, 241, 0.07);
 
   --usus-shadow:
     0 1px 2px rgba(0, 0, 0, 0.18),
-    0 8px 24px rgba(0, 0, 0, 0.12);
-};
+    0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+/* =========================================================
+   THEME COMPATIBILITY ALIASES
+   ========================================================= */
+
+:root,
+.dark {
+  --background: var(--usus-background);
+  --foreground: var(--usus-text);
+}
 
 /* =========================================================
    BASE
@@ -102,6 +137,7 @@ html {
 
 body {
   margin: 0;
+  font-family: var(--font-body);
   background: var(--usus-background);
   color: var(--usus-text);
 
@@ -173,7 +209,7 @@ a[aria-disabled="true"] {
 
 ::selection {
   background: var(--usus-primary);
-  color: #111111;
+  color: var(--usus-on-primary);
 }
 
 /* =========================================================
